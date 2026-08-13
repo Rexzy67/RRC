@@ -5,7 +5,7 @@ This guide explains how each setting in the Lua recoil script works, how to modi
 ---
 
 ## ⚙️ Core Settings (`--- DONT CHANGE ---`)
-> You can change them but i dont recommend it ad they are tuned to be perfect
+> You can change them but i dont recommend it as they are tuned to be perfect and work almost all of the Time
 
 These top-level variables dictate the primary behavior and toggle conditions of the macro.
 
@@ -31,32 +31,42 @@ RecoilControlMode = "R4C" -- Options: "P90", "SMG11", "SMG12", "R4C", "AK74M", "
 
 ## How to Edit & Create Custom Profiles
 
-1. Adjusting the Custom Mode
-If your weapon isn't listed or you use custom attachments (e.g., Muzzle Brake, Suppressor), set RecoilControlMode = "Custom" and adjust RcCustomStrength:
+
+```lua
+RecoilControlMode = "R4C" -- Options: "P90", "SMG11", "SMG12", "R4C", "AK74M", "F2", "M762", "XK23", "Scorpion", "K1A", "MPX", "Vector", "Custom" -- More coming soon
+```
+
+## How to Edit and Create Custom Profiles
+
+### 1. Adjusting the Custom Mode
+
+If your weapon isn't listed or you use custom attachments (for example, a Muzzle Brake or Suppressor), set `RecoilControlMode` to `"Custom"` and adjust `RcCustomStrength`:
 
 ```lua
 RecoilControlMode = "Custom"
-RcCustomStrength = 20  -- Increase to pull down MORE, decrease to pull down LESS
+RcCustomStrength = 20 -- Increase to pull down MORE; decrease to pull down LESS
+```
 
-2. Adding a New Weapon Preset
-To permanently add a new weapon to the preset list, add an elseif condition in the preset block:
+### 2. Adding a New Weapon Preset
+
+To permanently add a new weapon to the preset list, add an `elseif` condition to the preset block:
 
 ```lua
 elseif RecoilControlMode == "MY_NEW_GUN" then
     RecoilControlStrength = 25
+```
 
-    🖱️ Script Trigger Mechanics (------------ CODE -------------)
-The core execution block determines when and how recoil compensation applies:
+## 🖱️ Script Trigger Mechanics
 
-Dual-Trigger Requirement: The script only triggers when both Mouse 1 (Primary Attack / Fire) and Mouse 3 (Aim Down Sight / Middle Click depending on setup) are held down simultaneously.
+The core execution block determines when and how recoil compensation is applied:
 
-Looping Movement: While both buttons remain pressed, the script executes MoveMouseRelative(0, RecoilControlStrength) every DelayRate milliseconds.
-
-Automatic Release: As soon as you release either Left-Click or Right-Click, the loop terminates immediately.
+- **Dual-trigger requirement:** The script triggers only when Mouse 1 (Primary Attack/Fire) and Mouse 3 (Aim Down Sights/Middle Click, depending on your setup) are held simultaneously.
+- **Looping movement:** While both buttons remain pressed, the script executes `MoveMouseRelative(0, RecoilControlStrength)` every `DelayRate` milliseconds.
+- **Automatic release:** As soon as either required mouse button is released, the loop terminates.
 
 > [!TIP]
-> Fine-Tuning Recoil in Game:
-> 
-> If your crosshair pulls down towards the floor: Decrease the strength value.
-> 
-> If your crosshair still bounces upwards: Increase the strength value.
+> **Fine-tuning recoil in game**
+>
+> If your crosshair pulls down toward the floor, decrease the strength value.
+>
+> If your crosshair still bounces upward, increase the strength value.
