@@ -55,14 +55,14 @@ Follow these steps to load the Lua script into Logitech G HUB:
 > **Quick Usage Tip:**
 > * To adjust weapon profiles, change `RecoilControlMode = "Custom"` at the top of the script to your desired weapon (e.g., `RecoilControlMode = "R4C"`).
 > * Remember to hit `Ctrl + S` in the script editor every time you edit values.
-> * For a Full Tutorial, check out [How to use?](HOWTOUSE.md)
+> * For a Full Tutorial, check out [How to use?](docs/HOWTOUSE.md)
 ___
 > [!NOTE]
 > ## Contributing
 > Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
 > ### How to Get Started
-> * Check out the [Contributing Guidelines](CONTRIBUTING.md) for step-by-step guidance on submitting pull requests and reporting bugs.
-> * Please make sure to review and follow our [Code of Conduct](CODE_OF_CONDUCT.md) to keep this Script community welcoming and inclusive.
+> * Check out the [Contributing Guidelines](docs/CONTRIBUTING.md) for step-by-step guidance on submitting pull requests and reporting bugs.
+> * Please make sure to review and follow our [Code of Conduct](docs/CODE_OF_CONDUCT.md) to keep this Script community welcoming and inclusive.
 > 
 > ### Ways You Can Help
 > *  **Report Bugs:** Open an issue if you find a broken preset or script error.
