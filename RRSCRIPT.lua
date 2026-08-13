@@ -11,9 +11,29 @@ DelayRate = 20
 -- Mouse button 5 is commonly a side button. Do not use buttons 1 or 3 here.
 ProfileSwitchButton = 5
 
+-- Press this mouse button to temporarily disable or re-enable recoil control.
+-- Set to 0 to disable this mouse-button toggle. Do not use buttons 1, 3, or ProfileSwitchButton.
+TemporaryToggleButton = 4
+
+-- Optional Logitech G-key (G1 through G18) for the same temporary toggle.
+-- Set to 0 when unused. Normal letter keys are not exposed to G HUB Lua scripts.
+TemporaryToggleGKey = 0
+
+----- DPI AND SENSITIVITY CALIBRATION -----
+-- Presets are calibrated at 900 DPI, Vertical 10, and Horizontal 20.
+-- Enter your own current mouse DPI and Rainbow Six Siege sensitivity below.
+-- HorizontalSensitivity is recorded for calibration compatibility; this script only moves vertically.
+MouseDPI = 900
+VerticalSensitivity = 10
+HorizontalSensitivity = 20
+
 ----- WEAPON PRESETS -----
 RecoilControlMode = "Custom"
-RcCustomStrength = 20
+RcCustomStrength = 32
+
+BaselineDPI = 900
+BaselineVerticalSensitivity = 10
+BaselineHorizontalSensitivity = 20
 
 ProfileOrder = {
     "P90",
@@ -28,6 +48,31 @@ ProfileOrder = {
     "K1A",
     "MPX",
     "Vector",
+    "T-5",
+    "9x19",
+    "TCSG12",
+    "MP7",
+    "UZK50GI",
+    "MP5",
+    "MP5SD",
+    "MP5K",
+    "416-C",
+    "UMP45",
+    "P10 Roni",
+    "SPEAR .308",
+    "PARA-308",
+    "556XI",
+    "L85A2",
+    "M4",
+    "AK-12",
+    "552 COMMANDO",
+    "C8-SFW",
+    "V308",
+    "T-95 LSW",
+    "C7E",
+    "F90",
+    "G36C",
+    "POF-9",
     "Custom"
 }
 
@@ -38,14 +83,60 @@ ProfileStrengths = {
     R4C = 18,
     AK74M = 23,
     F2 = 52,
-    M762 = 52,
+    M762 = 37,
     XK23 = 26,
     Scorpion = 18,
     K1A = 15,
     MPX = 13,
     Vector = 13,
+    ["T-5"] = 15,
+    ["9x19"] = 14,
+    TCSG12 = 60,
+    MP7 = 17,
+    UZK50GI = 17,
+    MP5 = 14,
+    MP5SD = 16,
+    MP5K = 16,
+    ["416-C"] = 13,
+    UMP45 = 8,
+    ["P10 Roni"] = 14,
+    ["SPEAR .308"] = 33,
+    ["PARA-308"] = 28,
+    ["556XI"] = 24,
+    L85A2 = 26,
+    M4 = 35,
+    ["AK-12"] = 37,
+    ["552 COMMANDO"] = 37,
+    ["C8-SFW"] = 41,
+    V308 = 29,
+    ["T-95 LSW"] = 32,
+    C7E = 42,
+    F90 = 31,
+    G36C = 36,
+    ["POF-9"] = 33,
     Custom = RcCustomStrength
 }
+
+CalibrationIsValid = type(MouseDPI) == "number"
+    and MouseDPI > 0
+    and type(VerticalSensitivity) == "number"
+    and VerticalSensitivity > 0
+
+function ScaleRecoilStrength(baselineStrength)
+    if baselineStrength <= 0 then
+        return 0
+    end
+
+    if not CalibrationIsValid then
+        return baselineStrength
+    end
+
+    local scaledStrength = baselineStrength
+        * (BaselineDPI / MouseDPI)
+        * (BaselineVerticalSensitivity / VerticalSensitivity)
+
+    return math.max(1, math.floor(scaledStrength + 0.5))
+end
 
 function GetProfileIndex(profileName)
     for index, name in ipairs(ProfileOrder) do
@@ -59,22 +150,27 @@ end
 
 function SetActiveProfile(profileName)
     RecoilControlMode = profileName
-    RecoilControlStrength = ProfileStrengths[profileName] or 0
+    BaselineRecoilControlStrength = ProfileStrengths[profileName] or 0
+    RecoilControlStrength = ScaleRecoilStrength(BaselineRecoilControlStrength)
 end
 
 function PrintActiveProfile()
     OutputLogMessage(
-        "Current weapon profile: %s (strength: %s)\n",
+        "Current weapon profile: %s (strength: %s; 900 DPI/V10 baseline: %s)\n",
         tostring(RecoilControlMode),
-        tostring(RecoilControlStrength)
+        tostring(RecoilControlStrength),
+        tostring(BaselineRecoilControlStrength)
     )
 end
 
 CurrentProfileIndex = GetProfileIndex(RecoilControlMode)
+SavedProfileIndex = CurrentProfileIndex
+TemporaryRCSDisabled = false
 
 if CurrentProfileIndex ~= nil then
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
 else
+    BaselineRecoilControlStrength = 0
     RecoilControlStrength = 0
 end
 
@@ -86,21 +182,72 @@ function CycleProfile()
     end
 
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
+
+    if TemporaryRCSDisabled then
+        SavedProfileIndex = CurrentProfileIndex
+    end
+
+    PrintActiveProfile()
+end
+
+function IsTemporaryTogglePressed(event, arg)
+    return (event == "MOUSE_BUTTON_PRESSED"
+            and TemporaryToggleButton > 0
+            and arg == TemporaryToggleButton)
+        or (event == "G_PRESSED"
+            and TemporaryToggleGKey > 0
+            and arg == TemporaryToggleGKey)
+end
+
+function ToggleTemporaryRCS()
+    TemporaryRCSDisabled = not TemporaryRCSDisabled
+
+    if TemporaryRCSDisabled then
+        SavedProfileIndex = CurrentProfileIndex
+        OutputLogMessage(
+            "RCS temporarily disabled. Saved profile: %s\n",
+            tostring(RecoilControlMode)
+        )
+        return
+    end
+
+    if SavedProfileIndex ~= nil then
+        CurrentProfileIndex = SavedProfileIndex
+        SetActiveProfile(ProfileOrder[CurrentProfileIndex])
+    end
+
+    OutputLogMessage("RCS re-enabled. Restored saved profile.\n")
     PrintActiveProfile()
 end
 
 ------------ LOGITECH G HUB EVENTS -------------
 
 EnablePrimaryMouseButtonEvents(true)
+
+if not CalibrationIsValid then
+    OutputLogMessage(
+        "Invalid MouseDPI or VerticalSensitivity. Using unscaled 900 DPI/V10 preset values.\n"
+    )
+end
+
 PrintActiveProfile()
 
 function OnEvent(event, arg)
+    if IsTemporaryTogglePressed(event, arg) then
+        ToggleTemporaryRCS()
+        return
+    end
+
     if event == "MOUSE_BUTTON_PRESSED" and arg == ProfileSwitchButton then
         CycleProfile()
         return
     end
 
     if not EnableRCS then
+        return
+    end
+
+    if TemporaryRCSDisabled then
         return
     end
 

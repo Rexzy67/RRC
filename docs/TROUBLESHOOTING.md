@@ -22,6 +22,10 @@ Ensure that `RecoilControlMode` exactly matches one of the documented preset nam
 
 Confirm that `ProfileSwitchButton` is set to the mouse-button number you are pressing, then save and run the script again in G HUB. The default is button `5`, which is commonly a side button. Do not set it to `1` or `3`, as those inputs are used for the fire-and-aim trigger. Each successful press writes the active profile to the G HUB output console.
 
+## Recoil control remains disabled after using the temporary toggle
+
+Press the same `TemporaryToggleButton` again, or press the Logitech G-key set by `TemporaryToggleGKey`. The temporary toggle retains the active profile and prints it when recoil control is re-enabled. If recoil still does not run, check that `EnableRCS` is `true` and, when enabled, the `RequireToggle` lock-key condition is satisfied.
+
 ## The on-screen profile popup does not appear
 
 The popup requires Windows, Python 3, and `scripts/ProfilePopup.pyw` to be running. Start it once per session, then confirm that **RRC Profile Popup** is visible in the Windows system tray. Right-click the icon and select **Test profile popup** first. If `Profile: TEST` does not appear, the overlay is blocked or hidden; use borderless/windowed fullscreen instead of exclusive fullscreen. If the test works but Mouse 5 does not cycle the popup, ensure Mouse 5 has not been remapped or intercepted by another program. Also confirm that `INITIAL_PROFILE` in `ProfilePopup.pyw` matches `RecoilControlMode` in `RRSCRIPT.lua` before the helper starts.

@@ -27,6 +27,31 @@ PROFILE_ORDER = (
     "K1A",
     "MPX",
     "Vector",
+    "T-5",
+    "9x19",
+    "TCSG12",
+    "MP7",
+    "UZK50GI",
+    "MP5",
+    "MP5SD",
+    "MP5K",
+    "416-C",
+    "UMP45",
+    "P10 Roni",
+    "SPEAR .308",
+    "PARA-308",
+    "556XI",
+    "L85A2",
+    "M4",
+    "AK-12",
+    "552 COMMANDO",
+    "C8-SFW",
+    "V308",
+    "T-95 LSW",
+    "C7E",
+    "F90",
+    "G36C",
+    "POF-9",
     "Custom",
 )
 INITIAL_PROFILE = "Custom"
@@ -70,6 +95,7 @@ WS_BORDER = 0x00800000
 WS_EX_TOOLWINDOW = 0x00000080
 WS_EX_TOPMOST = 0x00000008
 WS_EX_NOACTIVATE = 0x08000000
+WS_EX_LAYERED = 0x00080000
 SS_CENTER = 0x00000001
 SS_CENTERIMAGE = 0x00000200
 
@@ -78,6 +104,7 @@ SW_SHOWNOACTIVATE = 4
 HWND_TOPMOST = wintypes.HWND(-1)
 SWP_NOACTIVATE = 0x0010
 SWP_SHOWWINDOW = 0x0040
+LWA_ALPHA = 0x00000002
 
 NIM_ADD = 0x00000000
 NIM_MODIFY = 0x00000001
@@ -100,6 +127,10 @@ ID_TEST = 1002
 ID_EXIT = 1003
 POPUP_TIMER_ID = 1
 POPUP_DURATION_MS = 1500
+POPUP_MARGIN_PX = 50
+POPUP_OPACITY = 128  # 50% opacity, where 255 is fully opaque.
+POPUP_HORIZONTAL_PADDING_PX = 8
+POPUP_VERTICAL_PADDING_PX = 4
 
 WM_SETFONT = 0x0030
 DEFAULT_GUI_FONT = 17
@@ -108,6 +139,9 @@ BLACK = 0x000000
 WHITE = 0xFFFFFF
 MB_OK = 0x00000000
 MB_ICONINFORMATION = 0x00000040
+SPI_GETWORKAREA = 0x0030
+SM_CXSCREEN = 0
+SM_CYSCREEN = 1
 
 
 class GUID(ctypes.Structure):
@@ -147,6 +181,10 @@ class MSLLHOOKSTRUCT(ctypes.Structure):
         ("time", wintypes.DWORD),
         ("dwExtraInfo", ULONG_PTR),
     ]
+
+
+class SIZE(ctypes.Structure):
+    _fields_ = [("cx", ctypes.c_long), ("cy", ctypes.c_long)]
 
 
 WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
@@ -199,8 +237,14 @@ user32.SetWindowPos.argtypes = [
     ctypes.c_int,
     wintypes.UINT,
 ]
+user32.SetLayeredWindowAttributes.argtypes = [wintypes.HWND, wintypes.COLORREF, wintypes.BYTE, wintypes.DWORD]
+user32.SetLayeredWindowAttributes.restype = wintypes.BOOL
 user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
 user32.GetCursorPos.restype = wintypes.BOOL
+user32.SystemParametersInfoW.argtypes = [wintypes.UINT, wintypes.UINT, wintypes.LPVOID, wintypes.UINT]
+user32.SystemParametersInfoW.restype = wintypes.BOOL
+user32.GetSystemMetrics.argtypes = [ctypes.c_int]
+user32.GetSystemMetrics.restype = ctypes.c_int
 user32.SetTimer.argtypes = [wintypes.HWND, UINT_PTR, wintypes.UINT, wintypes.LPVOID]
 user32.SetTimer.restype = UINT_PTR
 user32.KillTimer.argtypes = [wintypes.HWND, UINT_PTR]
@@ -231,10 +275,18 @@ gdi32.SetTextColor.argtypes = [wintypes.HDC, wintypes.COLORREF]
 gdi32.SetTextColor.restype = wintypes.COLORREF
 gdi32.SetBkColor.argtypes = [wintypes.HDC, wintypes.COLORREF]
 gdi32.SetBkColor.restype = wintypes.COLORREF
+gdi32.SelectObject.argtypes = [wintypes.HDC, wintypes.HANDLE]
+gdi32.SelectObject.restype = wintypes.HANDLE
+gdi32.GetTextExtentPoint32W.argtypes = [wintypes.HDC, wintypes.LPCWSTR, ctypes.c_int, ctypes.POINTER(SIZE)]
+gdi32.GetTextExtentPoint32W.restype = wintypes.BOOL
 user32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
 user32.SendMessageW.restype = LRESULT
 user32.SetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPCWSTR]
 user32.SetWindowTextW.restype = wintypes.BOOL
+user32.GetDC.argtypes = [wintypes.HWND]
+user32.GetDC.restype = wintypes.HDC
+user32.ReleaseDC.argtypes = [wintypes.HWND, wintypes.HDC]
+user32.ReleaseDC.restype = ctypes.c_int
 user32.MessageBoxW.argtypes = [wintypes.HWND, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.UINT]
 user32.MessageBoxW.restype = ctypes.c_int
 kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
@@ -436,7 +488,7 @@ class ProfilePopupApp:
     def show_popup(self, profile: str) -> None:
         if not self.popup_hwnd:
             self.popup_hwnd = user32.CreateWindowExW(
-                WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+                WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED,
                 "STATIC",
                 "",
                 WS_POPUP | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
@@ -453,24 +505,55 @@ class ProfilePopupApp:
                 raise_last_error("Unable to create the profile popup")
             font = gdi32.GetStockObject(DEFAULT_GUI_FONT)
             user32.SendMessageW(self.popup_hwnd, WM_SETFONT, font, 1)
+            user32.SetLayeredWindowAttributes(self.popup_hwnd, 0, POPUP_OPACITY, LWA_ALPHA)
 
         text = f"Profile: {profile}"
         user32.SetWindowTextW(self.popup_hwnd, text)
-        width = max(260, 96 + len(text) * 10)
-        height = 58
-        cursor = wintypes.POINT()
-        user32.GetCursorPos(ctypes.byref(cursor))
+        width, height = self.popup_size(text)
+        work_area = self.work_area()
+        x = work_area.right - POPUP_MARGIN_PX - width
+        y = work_area.top + POPUP_MARGIN_PX
 
         user32.SetWindowPos(
             self.popup_hwnd,
             HWND_TOPMOST,
-            cursor.x + 24,
-            cursor.y + 24,
+            x,
+            y,
             width,
             height,
             SWP_NOACTIVATE | SWP_SHOWWINDOW,
         )
         user32.SetTimer(self.hwnd, POPUP_TIMER_ID, POPUP_DURATION_MS, None)
+
+    def popup_size(self, text: str) -> tuple[int, int]:
+        device_context = user32.GetDC(self.popup_hwnd)
+        if not device_context:
+            raise_last_error("Unable to measure the popup text")
+
+        try:
+            font = gdi32.GetStockObject(DEFAULT_GUI_FONT)
+            previous_font = gdi32.SelectObject(device_context, font)
+            text_size = SIZE()
+            if not gdi32.GetTextExtentPoint32W(device_context, text, len(text), ctypes.byref(text_size)):
+                raise_last_error("Unable to measure the popup text")
+            gdi32.SelectObject(device_context, previous_font)
+        finally:
+            user32.ReleaseDC(self.popup_hwnd, device_context)
+
+        width = text_size.cx + (POPUP_HORIZONTAL_PADDING_PX * 2) + 2
+        height = text_size.cy + (POPUP_VERTICAL_PADDING_PX * 2) + 2
+        return width, height
+
+    def work_area(self) -> wintypes.RECT:
+        area = wintypes.RECT()
+        if user32.SystemParametersInfoW(SPI_GETWORKAREA, 0, ctypes.byref(area), 0):
+            return area
+
+        area.left = 0
+        area.top = 0
+        area.right = user32.GetSystemMetrics(SM_CXSCREEN)
+        area.bottom = user32.GetSystemMetrics(SM_CYSCREEN)
+        return area
 
     def show_tray_menu(self) -> None:
         menu = user32.CreatePopupMenu()

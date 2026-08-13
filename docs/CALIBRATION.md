@@ -4,6 +4,7 @@ This guide makes preset contributions reviewable and helps prevent old or incomp
 
 ## Calibration principles
 
+- Calibrate every new or updated weapon preset at **900 DPI, vertical sensitivity 10, and horizontal sensitivity 20**. This is mandatory so the script can scale the result for other settings.
 - Use one repeatable setup for every test.
 - Change only one variable at a time.
 - State the game build or date tested, because game updates can change behavior.
@@ -20,8 +21,8 @@ Include this information in a **Preset calibration** issue or pull request:
 | Game build/date | Version number if available, otherwise the test date |
 | Proposed value | The integer strength value tested |
 | Attachment | Exact attachment configuration |
-| In-game settings | Sensitivity and other relevant settings |
-| Hardware | Mouse model and DPI |
+| In-game settings | Vertical `10` and horizontal `20`, plus other relevant settings |
+| Hardware | Mouse model and **900 DPI** |
 | Display | Resolution and display mode, if relevant |
 | Test method | Repeatable steps and test duration |
 | Observed result | What happened and how consistent it was |

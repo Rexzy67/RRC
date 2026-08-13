@@ -27,10 +27,33 @@ The values at the top of `RRSCRIPT.lua` are intended to be configured. Keep thei
 | `ToggleKey` | String | `"CapsLock"` | Lock key checked when `RequireToggle` is enabled, such as `"CapsLock"`, `"NumLock"`, or `"ScrollLock"`. |
 | `DelayRate` | Integer | `20` | Milliseconds between mouse-movement ticks. Use a positive whole number. |
 | `ProfileSwitchButton` | Integer | `5` | Mouse-button number that cycles to the next profile. Button `5` is commonly a side button; do not use `1` or `3`. |
+| `TemporaryToggleButton` | Integer | `4` | Mouse-button number that temporarily disables or re-enables recoil control. Set to `0` to disable this control. Do not use `1`, `3`, or the configured profile-switch button. |
+| `TemporaryToggleGKey` | Integer | `0` | Optional Logitech G-key number (`1`–`18`) for the temporary recoil toggle. Set to `0` when unused. |
+| `MouseDPI` | Integer | `900` | Your mouse's current DPI. Enter a positive value. |
+| `VerticalSensitivity` | Number | `10` | Your current Rainbow Six Siege vertical sensitivity. Enter a positive value. |
+| `HorizontalSensitivity` | Number | `20` | Your current Rainbow Six Siege horizontal sensitivity. It is recorded for calibration compatibility but does not alter vertical-only compensation. |
 | `RecoilControlMode` | String | `"Custom"` | The active preset name, or `"Custom"` to use `RcCustomStrength`. |
-| `RcCustomStrength` | Integer | `20` | Strength used only when `RecoilControlMode` is `"Custom"`. |
+| `RcCustomStrength` | Integer | `32` | Baseline strength used only when `RecoilControlMode` is `"Custom"`; it is scaled from 900 DPI and vertical sensitivity 10. |
 
 Save the script in G HUB every time you change a value.
+
+## DPI and sensitivity scaling
+
+All built-in presets, including the `Custom` strength, use this original calibration baseline:
+
+- **900 DPI**
+- **Vertical sensitivity: 10**
+- **Horizontal sensitivity: 20**
+
+Set `MouseDPI`, `VerticalSensitivity`, and `HorizontalSensitivity` to the values you currently use in Rainbow Six Siege. The script scales its vertical movement from the original baseline with this calculation, rounded to the nearest whole movement tick:
+
+```text
+scaled strength = baseline strength × (900 / MouseDPI) × (10 / VerticalSensitivity)
+```
+
+Higher DPI or higher vertical sensitivity produces a lower scaled strength; lower DPI or lower vertical sensitivity produces a higher one. Horizontal sensitivity is not part of the calculation because the script only calls `MoveMouseRelative(0, strength)` and never moves horizontally. Keep it at your real value so your setup and future preset calibration are accurately recorded.
+
+For example, a profile strength of `18` becomes `9` at 1800 DPI and vertical sensitivity 10. If `MouseDPI` or `VerticalSensitivity` is zero or invalid, the script reports the problem in the G HUB console and falls back to the unscaled baseline value.
 
 ## Selecting a preset
 
@@ -42,13 +65,51 @@ RecoilControlMode = "R4C"
 
 Available built-in presets are:
 
-`P90`, `SMG11`, `SMG12`, `R4C`, `AK74M`, `F2`, `M762`, `XK23`, `Scorpion`, `K1A`, `MPX`, and `Vector`.
+| Weapon profile | Operator | 900 DPI / Vertical 10 strength |
+| :--- | :--- | ---: |
+| `P90` | — | 15 |
+| `SMG11` | — | 25 |
+| `SMG12` | — | 31 |
+| `R4C` | — | 18 |
+| `AK74M` | — | 23 |
+| `F2` | — | 52 |
+| `M762` | — | 37 |
+| `XK23` | — | 26 |
+| `Scorpion` | — | 18 |
+| `K1A` | — | 15 |
+| `MPX` | — | 13 |
+| `Vector` | — | 13 |
+| `T-5` | Lesion | 15 |
+| `9x19` | Kapkan | 14 |
+| `TCSG12` | Kaid | 60 |
+| `MP7` | Bandit | 17 |
+| `UZK50GI` | Thorn | 17 |
+| `MP5` | Melusi | 14 |
+| `MP5SD` | Echo | 16 |
+| `MP5K` | Mute | 16 |
+| `416-C` | Jäger | 13 |
+| `UMP45` | Castle | 8 |
+| `P10 Roni` | Mozzie | 14 |
+| `SPEAR .308` | Finka | 33 |
+| `PARA-308` | Brava | 28 |
+| `556XI` | Thermite | 24 |
+| `L85A2` | Thatcher | 26 |
+| `M4` | Maverick | 35 |
+| `AK-12` | Ace | 37 |
+| `552 COMMANDO` | Grim | 37 |
+| `C8-SFW` | Buck | 41 |
+| `V308` | Lion | 29 |
+| `T-95 LSW` | Ying | 32 |
+| `C7E` | Jackal | 42 |
+| `F90` | Gridlock | 31 |
+| `G36C` | Iana | 36 |
+| `POF-9` | Sens | 33 |
 
 Use `Custom` for a value you set yourself:
 
 ```lua
 RecoilControlMode = "Custom"
-RcCustomStrength = 20
+RcCustomStrength = 32
 ```
 
 If the mode name does not match a built-in preset or `Custom`, the current script selects a strength of `0`. Check spelling and capitalization first if no movement occurs.
@@ -57,15 +118,24 @@ If the mode name does not match a built-in preset or `Custom`, the current scrip
 
 Press the mouse button set by `ProfileSwitchButton` to move to the next profile. The default is button `5`, which is commonly a mouse side button. Every press cycles through the profiles in this order:
 
-`P90` → `SMG11` → `SMG12` → `R4C` → `AK74M` → `F2` → `M762` → `XK23` → `Scorpion` → `K1A` → `MPX` → `Vector` → `Custom` → `P90`
+`P90` → `SMG11` → `SMG12` → `R4C` → `AK74M` → `F2` → `M762` → `XK23` → `Scorpion` → `K1A` → `MPX` → `Vector` → `T-5` → `9x19` → `TCSG12` → `MP7` → `UZK50GI` → `MP5` → `MP5SD` → `MP5K` → `416-C` → `UMP45` → `P10 Roni` → `SPEAR .308` → `PARA-308` → `556XI` → `L85A2` → `M4` → `AK-12` → `552 COMMANDO` → `C8-SFW` → `V308` → `T-95 LSW` → `C7E` → `F90` → `G36C` → `POF-9` → `Custom` → `P90`
 
 G HUB writes the active profile and its strength to the script output console at startup and after every switch. For example:
 
 ```text
-Current weapon profile: R4C (strength: 18)
+Current weapon profile: R4C (strength: 18; 900 DPI/V10 baseline: 18)
 ```
 
 Do not set `ProfileSwitchButton` to `1` or `3`, because those are the inputs used for the script's fire-and-aim trigger. The profile switch remains available even if `EnableRCS` is set to `false` or the lock-key requirement is not satisfied.
+
+> [!NOTE]
+> G HUB's Lua event API receives mouse-button and Logitech G-key events, but it does not receive ordinary letter-key presses. A letter such as `P` therefore cannot be used directly as `ProfileSwitchButton`. Use any spare mouse button for profile switching; the standalone popup helper follows its Mouse 5 default.
+
+## Temporary recoil toggle
+
+Press `TemporaryToggleButton` (default: mouse button `4`) to disable recoil compensation without changing the selected weapon profile. Press it again to re-enable recoil control; the script restores and prints the saved profile. You can also set `TemporaryToggleGKey` to a Logitech G-key number from `1` through `18` if your hardware supports G-keys.
+
+The temporary toggle only affects recoil control. The master `EnableRCS` setting and the optional `RequireToggle` lock-key requirement still apply. If you switch profiles while temporarily disabled, the latest selected profile is saved and restored when you re-enable recoil control.
 
 ## On-screen profile popup (Windows)
 
@@ -97,8 +167,8 @@ When `RequireToggle` is enabled, the selected lock key must also be active. This
 ## Fine-tuning a custom profile
 
 1. Set `RecoilControlMode` to `"Custom"`.
-2. Begin with a conservative `RcCustomStrength`.
-3. Test consistently with the same attachment, in-game sensitivity, DPI, and resolution.
+2. Begin with a conservative `RcCustomStrength`. It is treated as a 900 DPI / vertical 10 baseline value and is scaled like built-in profiles.
+3. Set `MouseDPI`, `VerticalSensitivity`, and `HorizontalSensitivity` to your actual settings, then test consistently with the same attachment and resolution.
 4. Change one value at a time and save the script after each edit.
 5. Record the conditions and result if you plan to submit a preset update.
 

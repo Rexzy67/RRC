@@ -22,6 +22,11 @@ Use the **Bug report** issue form and include:
 
 ## Submit a preset calibration
 
+> [!IMPORTANT]
+> ## Required baseline for new or updated weapons
+>
+> New weapon recoil values and updates to existing presets **must be calibrated at 900 DPI, vertical sensitivity 10, and horizontal sensitivity 20**. These are the script's baseline settings. Do not submit values calibrated at another DPI or sensitivity; users with different settings are handled by the script's scaling calculation.
+
 Preset values can become stale when game settings change. Use the **Preset calibration** issue form or submit a pull request that includes the information required by the [calibration guide](CALIBRATION.md). A useful submission records the game build, the exact attachment assumptions, sensitivity and DPI, the test method, and the observed result.
 
 Do not present a calibration as universally valid. Hardware and game settings differ between users.

@@ -8,6 +8,7 @@ body:
     attributes:
       value: |
         A calibration is configuration-specific, not a universal guarantee. Complete every field so it can be reviewed.
+        New and updated weapon presets must be tested at 900 DPI, vertical sensitivity 10, and horizontal sensitivity 20.
   - type: input
     id: preset-name
     attributes:
@@ -33,7 +34,7 @@ body:
     id: setup
     attributes:
       label: Test setup
-      description: Include attachment, in-game sensitivity, mouse model, DPI, resolution, and display mode.
+      description: Include attachment, in-game sensitivity (must be vertical 10 and horizontal 20), mouse model, DPI (must be 900), resolution, and display mode.
     validations:
       required: true
   - type: textarea
