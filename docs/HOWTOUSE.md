@@ -3,6 +3,8 @@
 This guide explains how each setting in the Lua recoil script works, how to modify key settings, and how to create your own custom weapon presets.
 
 ---
+> [!IMPORTANT]
+> This script requires Flash hider to be equipped on all Guns to work. 
 
 ## ⚙️ Core Settings (`--- DONT CHANGE ---`)
 > You can change them but i dont recommend it as they are tuned to be perfect and work almost all of the Time
