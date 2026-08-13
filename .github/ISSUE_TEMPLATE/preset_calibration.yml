@@ -1,0 +1,52 @@
+name: Preset calibration
+description: Submit a new or updated preset with reproducible test conditions.
+title: "preset: "
+labels:
+  - calibration
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A calibration is configuration-specific, not a universal guarantee. Complete every field so it can be reviewed.
+  - type: input
+    id: preset-name
+    attributes:
+      label: Preset name
+      description: Existing preset to update or proposed new preset name.
+    validations:
+      required: true
+  - type: input
+    id: game-build
+    attributes:
+      label: Game build or test date
+      description: Use the version number when available; otherwise use the test date.
+    validations:
+      required: true
+  - type: input
+    id: proposed-value
+    attributes:
+      label: Proposed strength value
+      placeholder: "20"
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Test setup
+      description: Include attachment, in-game sensitivity, mouse model, DPI, resolution, and display mode.
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: Repeatable test method
+      description: Explain how the result was tested and for how long.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Observed result and limitations
+      description: Describe consistency and conditions where this value should not be used.
+    validations:
+      required: true

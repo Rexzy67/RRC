@@ -1,75 +1,58 @@
 # Rexzy — R6 Siege Recoil Control Script
-> Custom Logitech G Hub macro engineered for minimal recoil across primary and secondary loadouts.
 
-### Features:
-* **Custom Profiles:** Built-in weapon presets + customizable Profiles.
-* **Smart Toggles:** Configurable activation keys (e.g., Caps Lock) and custom delay rates.
----
-###### *Credits to the original creator [@0CT1](https://github.com/0CT1)*
+Custom Logitech G HUB Lua script with built-in presets and a configurable custom profile.
 
 ![Lua](https://img.shields.io/badge/Language-Lua-2C2D72?style=flat-square&logo=lua&logoColor=white)
 ![Logitech](https://img.shields.io/badge/Logitech-G%20Hub-00B8FC?style=flat-square&logo=logitech&logoColor=white)
 ![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)
 
 > [!IMPORTANT]
-> ### Terms of Use & Disclaimer of Responsibility
-> By downloading or using this script, you acknowledge that you are using it at your own discretion and risk. The software is provided "as-is" without warranty of any kind. Under no circumstances shall the author be held liable for any damages, account bans, or punitive actions taken by game developers or anti-cheat > systems.
-___
+> ## Usage and compatibility
+>
+> Game rules, terms of service, and anti-cheat policies can change. Confirm that input automation is permitted in the environment where you play before using this project. Use is at your own discretion and risk; the software is provided as-is, without warranty. The maintainers are not responsible for account actions or other consequences arising from its use.
+
+## Features
+
+- Built-in weapon presets and a configurable `Custom` profile.
+- Button-controlled profile cycling with console feedback and an optional standalone Windows popup beside the cursor.
+- Configurable master switch, lock-key requirement, and delay rate.
+- Logitech G HUB event handling that activates only while the configured fire and aim buttons are held.
+- Documentation for installation, configuration, troubleshooting, and contributing calibrated presets.
+
 ## Requirements
 
-> Before installing, ensure you have the following setup:
+- A Logitech G-series mouse compatible with Logitech G HUB.
+- Logitech G HUB installed and running on Windows or macOS.
+- In-game bindings that match the button assignments used by the script.
+- The attachment and settings assumptions documented in the [usage guide](docs/HOWTOUSE.md).
 
-*  **Logitech G Mouse:** Any Logitech G-series mouse compatible with G HUB.
-*  **Logitech G HUB:** Installed and running (Windows / macOS).
-*  **In-Game Settings:** Primary shoot set to `Mouse 1` (Left-Click) and Aim Down Sight (ADS) set to `Mouse 3` (Right-Click).
----
-## Installation Guide
+## Installation
 
-Follow these steps to load the Lua script into Logitech G HUB:
+1. Download [RRSCRIPT.lua](RRSCRIPT.lua).
+2. In Logitech G HUB, select or create the Rainbow Six Siege game profile.
+3. Open the profile menu, choose **Create Lua Script**, and replace the default editor contents with `RRSCRIPT.lua`.
+4. Save and run the script with **Script > Save & Run** (or <kbd>Ctrl</kbd>+<kbd>S</kbd>).
+5. Confirm that the G HUB console displays `LOADED`, then configure the active profile as described in the [usage guide](docs/HOWTOUSE.md).
 
-**0.** **Install and Extract the Script**
-   Install the Script from the Repository and extract it to your Desktop.
+For step-by-step G HUB navigation and configuration, see [How to use](docs/HOWTOUSE.md). If something does not work, start with [Troubleshooting](docs/TROUBLESHOOTING.md).
 
-**1.** **Open Logitech G HUB**
-   Launch the **Logitech G HUB** software on your PC. *(Running G HUB as Administrator is recommended).*
+## Documentation
 
-**2.** **Select Your Game Profile**
-   Click on the active profile dropdown at the top center of the screen and choose Manage Profiles.
+- [Configuration and usage](docs/HOWTOUSE.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Preset calibration guide](docs/CALIBRATION.md)
+- [Contributing guidelines](docs/CONTRIBUTING.md)
+- [Code of Conduct](docs/CODE_OF_CONDUCT.md)
+- [Changelog](CHANGELOG.md)
 
-**3.** **Select your Rainbow 6 Siege Profile**
-   Click on Rainbow 6 Siege then you will be within the Rainbow 6 Profile. Select the Profiles three dots which is set to `Default`.
-   > #### Rainbow 6 Siege not Visible?
-   > Simply choose add Games and Apps and Select Rainbow 6 Siege
-   
-**4.** **Creating a New Script**
-   Click **Create Lua Script** and delete the existing Code.
+## Contributing
 
-**5.** **Setting up the Script**
-   Delete any default text inside the editor window, then copy and paste the Lua script code into the editor, give it a Name in the Top middle where it says `New Script`.
+Bug reports, documentation improvements, and preset calibration submissions are welcome. Please read the [contributing guidelines](docs/CONTRIBUTING.md) and [Code of Conduct](docs/CODE_OF_CONDUCT.md) before opening an issue or pull request.
 
-**6.** **Save and Activate**
-   Click **Script > Save & Run** from the top menu (or press `Ctrl + S`). Check the output console at the bottom to verify the script saved without errors.
-> [!TIP]
-> If done correctly the Output Console should show `LOADED`.
->
-> **Quick Usage Tip:**
-> * To adjust weapon profiles, change `RecoilControlMode = "Custom"` at the top of the script to your desired weapon (e.g., `RecoilControlMode = "R4C"`).
-> * Remember to hit `Ctrl + S` in the script editor every time you edit values.
-> * For a Full Tutorial, check out [How to use?](docs/HOWTOUSE.md)
-___
-> [!NOTE]
-> ## Contributing
-> Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
-> ### How to Get Started
-> * Check out the [Contributing Guidelines](docs/CONTRIBUTING.md) for step-by-step guidance on submitting pull requests and reporting bugs.
-> * Please make sure to review and follow our [Code of Conduct](docs/CODE_OF_CONDUCT.md) to keep this Script community welcoming and inclusive.
-> 
-> ### Ways You Can Help
-> *  **Report Bugs:** Open an issue if you find a broken preset or script error.
-> *  **Add Presets:** Share optimized recoil values for new or updated guns.
-> *  **Improve Code:** Optimize performance or clean up existing Lua logic.
-___
-> [!TIP]
-> ### Thanks for using my Script!
-> **Need help About general inquiries?**
-> * Send me an email at **[rexzy63@proton.me](mailto:rexzy63@proton.me)**!
+## Credits
+
+Original creator: [@0CT1](https://github.com/0CT1).
+
+## License
+
+Distributed under the [MIT License](LICENSE).

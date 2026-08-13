@@ -1,0 +1,44 @@
+name: Validate repository
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  documentation:
+    name: Validate documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Markdown structure and local links
+        shell: pwsh
+        run: ./scripts/Test-Documentation.ps1
+
+  lua-syntax:
+    name: Check Lua syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Lua parser
+        run: sudo apt-get update && sudo apt-get install --yes lua5.4
+
+      - name: Parse script
+        run: luac -p RRSCRIPT.lua
+
+  python-helper:
+    name: Check Python popup helper
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Compile Python helper
+        run: python -m py_compile scripts/ProfilePopup.pyw

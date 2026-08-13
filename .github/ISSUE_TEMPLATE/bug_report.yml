@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible problem with the script or its documentation.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include account details, email addresses, or other private information.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the actual result and the result you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest repeatable sequence of steps.
+      placeholder: |
+        1. Open ...
+        2. Set ...
+        3. Hold ...
+    validations:
+      required: true
+  - type: textarea
+    id: console-output
+    attributes:
+      label: G HUB console output
+      description: Paste the complete error or state that there was no output.
+      render: text
+  - type: input
+    id: ghub-version
+    attributes:
+      label: Logitech G HUB version
+      placeholder: "2026.x.x"
+    validations:
+      required: true
+  - type: input
+    id: mouse-model
+    attributes:
+      label: Logitech mouse model
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system and version
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Relevant script configuration
+      description: Include the active preset, toggle settings, and delay rate. Do not include private information.
+      render: lua

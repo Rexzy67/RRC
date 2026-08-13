@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Configuration and troubleshooting
+    url: https://github.com/Rexzy67/RRC/blob/main/docs/TROUBLESHOOTING.md
+    about: Read the repository's usage and troubleshooting guides before opening an issue.
