@@ -8,7 +8,7 @@ This guide explains the settings in `RRSCRIPT.lua`, how to select a preset, and 
 > [!IMPORTANT]
 > ## Start the popup helper first
 >
-> When using profile switching, start `scripts/ProfilePopup.pyw` **before** you save and run `RRSCRIPT.lua` in Logitech G HUB. Both start on the configured initial profile (by default, `Custom`) and cycle in the same order when Mouse 5 is pressed. Starting the helper later can leave its profile display out of sync with the active Lua profile. If you change `RecoilControlMode`, update `INITIAL_PROFILE` in `ProfilePopup.pyw` to match before starting either component.
+> When using profile switching, start `scripts/ProfilePopup.pyw` **before** you save and run `RRSCRIPT.lua` in Logitech G HUB. Both start on the configured initial profile (by default, `Custom`) and cycle in the same order when the configured next-profile button is pressed. Starting the helper later can leave its profile display out of sync with the active Lua profile. If you change `RecoilControlMode`, update `INITIAL_PROFILE` in `ProfilePopup.pyw` to match before starting either component.
 
 ## Start-up check
 
@@ -26,8 +26,8 @@ The values at the top of `RRSCRIPT.lua` are intended to be configured. Keep thei
 | `RequireToggle` | Boolean | `false` | When `true`, the script runs only while the selected lock key is active. |
 | `ToggleKey` | String | `"CapsLock"` | Lock key checked when `RequireToggle` is enabled, such as `"CapsLock"`, `"NumLock"`, or `"ScrollLock"`. |
 | `DelayRate` | Integer | `20` | Milliseconds between mouse-movement ticks. Use a positive whole number. |
-| `ProfileSwitchButton` | Integer | `5` | Mouse-button number that cycles to the next profile. Button `5` is commonly a side button; do not use `1` or `3`. |
-| `PreviousProfileButton` | Integer | `4` | Mouse-button number that selects the previous profile. Set to `0` to disable this control. Do not use `1`, `3`, or the configured next-profile button. |
+| `ProfileSwitchButton` | Integer | `8` | Mouse-button number that cycles to the next profile. Button `8` is commonly an extra side button; do not use `1` or `3`. |
+| `PreviousProfileButton` | Integer | `7` | Mouse-button number that selects the previous profile. Set to `0` to disable this control. Do not use `1`, `3`, or the configured next-profile button. |
 | `PreviousProfileGKey` | Integer | `0` | Optional Logitech G-key number (`1`–`18`) for the previous-profile control. Set to `0` when unused. |
 | `MouseDPI` | Integer | `900` | Your mouse's current DPI. Enter a positive value. |
 | `VerticalSensitivity` | Number | `10` | Your current Rainbow Six Siege vertical sensitivity. Enter a positive value. |
@@ -116,7 +116,7 @@ If the mode name does not match a built-in preset or `Custom`, the current scrip
 
 ## Switching profiles in G HUB
 
-Press the mouse button set by `ProfileSwitchButton` to move to the next profile. The default is Mouse 5, which is commonly the second mouse side button. Press `PreviousProfileButton` (default: Mouse 4, the first mouse side button) to move back one profile. Both controls wrap around at the ends of the list.
+Press the mouse button set by `ProfileSwitchButton` to move to the next profile. The default is Mouse 8. Press `PreviousProfileButton` (default: Mouse 7) to move back one profile. Both controls wrap around at the ends of the list.
 
 Every press cycles through the profiles in this order:
 
@@ -131,18 +131,29 @@ Current weapon profile: R4C (strength: 18; 900 DPI/V10 baseline: 18)
 Do not set `ProfileSwitchButton` or `PreviousProfileButton` to `1` or `3`, because those are the inputs used for the script's fire-and-aim trigger. The profile controls remain available even if `EnableRCS` is set to `false` or the lock-key requirement is not satisfied.
 
 > [!NOTE]
-> G HUB's Lua event API receives mouse-button and Logitech G-key events, but it does not receive ordinary letter-key presses. A letter such as `P` therefore cannot be used directly as `ProfileSwitchButton`. Use any spare mouse button for profile switching; the standalone popup helper follows its Mouse 5 default.
+> G HUB's Lua event API receives mouse-button and Logitech G-key events, but it does not receive ordinary letter-key presses. A letter such as `P` therefore cannot be used directly as `ProfileSwitchButton`. Use a physical mouse button for profile switching and set the popup helper to the same button numbers.
 
 You can also set `PreviousProfileGKey` to a Logitech G-key number from `1` through `18` if your hardware supports G-keys.
 
 ## On-screen profile popup (Windows)
 
-The G HUB script cannot create a Windows overlay by itself, so the repository includes a standalone Python helper at `scripts/ProfilePopup.pyw`. It monitors physical Mouse 4 and Mouse 5 itself, follows the same profile order as `RRSCRIPT.lua`, and displays the previous, current, and next profiles for 1.5 seconds without taking keyboard focus. The current profile is solid black text; its neighboring profiles are muted gray. It does not receive messages from or access files through Logitech G HUB.
+The G HUB script cannot create a Windows overlay by itself, so the repository includes a standalone Python helper at `scripts/ProfilePopup.pyw`. It monitors either configured keyboard keys or physical Mouse 1--5 buttons, follows the same profile order as `RRSCRIPT.lua`, and displays the previous, current, and next profiles for 1.5 seconds without taking keyboard focus. The current profile is solid black text; its neighboring profiles are muted gray. It does not receive messages from or access files through Logitech G HUB.
 
 1. Install Python 3 for Windows if it is not already installed.
 2. Ensure `INITIAL_PROFILE` at the top of `scripts/ProfilePopup.pyw` matches `RecoilControlMode` in `RRSCRIPT.lua`. Both default to `Custom`.
 3. Double-click `scripts/ProfilePopup.pyw` once per Windows session. It places **RRC Profile Popup** in the Windows system tray.
-4. Keep `ProfileSwitchButton = 5` and `PreviousProfileButton = 4` in `RRSCRIPT.lua`. Mouse 5 moves forward and Mouse 4 moves back. Both the Lua script and Python helper follow the same order.
+4. Keep the shipped keyboard configuration in `ProfilePopup.pyw` for the default G HUB bindings: `INPUT_MODE = "keyboard"`, `PREVIOUS_PROFILE_KEY = "-"`, and `NEXT_PROFILE_KEY = ","`. In G HUB, assign Mouse 7 to `-` and Mouse 8 to `,`. The Lua script continues to use Mouse 7 and Mouse 8 internally.
+
+### Choose the popup input mode
+
+Set `INPUT_MODE` at the top of `ProfilePopup.pyw` to one of the following values, then restart the helper.
+
+| Mode | Use when | Configure |
+| :--- | :--- | :--- |
+| `"keyboard"` | G HUB maps the profile buttons to keys, including Mouse 7/8. | Set `PREVIOUS_PROFILE_KEY` and `NEXT_PROFILE_KEY`. The default `"-"` and `","` matches Mouse 7 and Mouse 8. |
+| `"mouse"` | The profile buttons are exposed to Windows as physical Mouse 1--5 buttons. | Set `PREVIOUS_PROFILE_MOUSE_BUTTON` and `NEXT_PROFILE_MOUSE_BUTTON` to different values from `1` through `5`. |
+
+Keyboard mode accepts letters (`"A"` through `"Z"`), numbers, the symbols `- = [ ] \ ; ' , . /`, and `Space`, `Tab`, `Enter`, `Backspace`, `Esc`, or `F1` through `F24`. Letter matching is case-insensitive. In mouse mode, avoid Mouse 1 and Mouse 3 unless you have also changed the Lua fire-and-aim bindings.
 
 Alternatively, run it manually from the repository root:
 
@@ -150,15 +161,15 @@ Alternatively, run it manually from the repository root:
 pythonw .\scripts\ProfilePopup.pyw
 ```
 
-At startup, the system-tray icon displays a notification explaining that it monitors Mouse 4 and Mouse 5. The popup is fully opaque and positioned in the top-right corner with 50 px margins. It automatically sizes itself to the longest displayed profile name. Double-click the icon, or right-click it and select **About RRC Profile Popup**, to view the explanation again. To close the helper at any time, right-click the icon and select **Exit**.
+At startup, the system-tray icon displays the configured previous/next keys or mouse buttons. The popup is fully opaque and positioned in the top-right corner with 50 px margins. It automatically sizes itself to the longest displayed profile name. Double-click the icon, or right-click it and select **About RRC Profile Popup**, to view the explanation again. To close the helper at any time, right-click the icon and select **Exit**.
 
 ### Re-sync a desynchronized popup
 
-If the popup does not match the profile active in G HUB, right-click the **RRC Profile Popup** tray icon, choose **Set popup profile**, and select the weapon currently active in G HUB. This changes only the Python helper's profile position; it does not change `RRSCRIPT.lua` or send input to the game. After selecting the matching weapon, Mouse 4 and Mouse 5 continue backward and forward from that profile.
+If the popup does not match the profile active in G HUB, right-click the **RRC Profile Popup** tray icon, choose **Set popup profile**, and select the weapon currently active in G HUB. This changes only the Python helper's profile position; it does not change `RRSCRIPT.lua` or send input to the game. After selecting the matching weapon, the configured previous and next keys or buttons continue backward and forward from that profile.
 
-To test the Windows helper without G HUB, right-click its tray icon and select **Test profile popup**. If the previous/current/next test names appear in the top-right corner, the helper and overlay are working. If the test works but Mouse 4 or Mouse 5 does not trigger it, another program may be intercepting the side button.
+To test the Windows helper without G HUB, right-click its tray icon and select **Test profile popup**. If the previous/current/next test names appear in the top-right corner, the helper and overlay are working. If the test works but a configured key or button does not trigger it, another program may be intercepting or remapping that input.
 
-If the mouse popup does not appear, ensure only one copy of the helper is running and that Mouse 4 or Mouse 5 has not been remapped or intercepted by another program. The popup may not appear over applications running in exclusive fullscreen mode; borderless or windowed fullscreen is recommended.
+If the popup does not appear, ensure only one copy of the helper is running and that the configured key or button has not been remapped or intercepted by another program. The popup may not appear over applications running in exclusive fullscreen mode; borderless or windowed fullscreen is recommended.
 
 ## Trigger behavior
 

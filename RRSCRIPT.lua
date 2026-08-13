@@ -8,12 +8,12 @@ ToggleKey = "CapsLock"
 DelayRate = 20
 
 -- Press this mouse-button number to cycle to the next weapon profile.
--- Mouse button 5 is commonly a side button. Do not use buttons 1 or 3 here.
-ProfileSwitchButton = 5
+-- Mouse button 8 is commonly an extra side button. Do not use buttons 1 or 3 here.
+ProfileSwitchButton = 8
 
 -- Press this mouse button to return to the previous weapon profile.
 -- Set to 0 to disable this control. Do not use buttons 1, 3, or ProfileSwitchButton.
-PreviousProfileButton = 4
+PreviousProfileButton = 7
 
 -- Optional Logitech G-key (G1 through G18) for the same previous-profile control.
 -- Set to 0 when unused. Normal letter keys are not exposed to G HUB Lua scripts.

@@ -20,15 +20,15 @@ Ensure that `RecoilControlMode` exactly matches one of the documented preset nam
 
 ## The profile-switch button does not cycle profiles
 
-Confirm that `ProfileSwitchButton` is set to the mouse-button number you are pressing, then save and run the script again in G HUB. The default is button `5`, which is commonly a side button. Do not set it to `1` or `3`, as those inputs are used for the fire-and-aim trigger. Each successful press writes the active profile to the G HUB output console.
+Confirm that `ProfileSwitchButton` is set to the mouse-button number you are pressing, then save and run the script again in G HUB. The shipped default is Mouse 8. Do not set it to `1` or `3`, as those inputs are used for the fire-and-aim trigger. Each successful press writes the active profile to the G HUB output console.
 
 ## The previous-profile button does not work
 
-Confirm that `PreviousProfileButton` is set to the mouse-button number you are pressing. The default is Mouse 4; it moves backward through the same profile list that Mouse 5 moves forward through. Do not set it to `1`, `3`, or the same number as `ProfileSwitchButton`. You can instead use a supported Logitech G-key by setting `PreviousProfileGKey` from `1` to `18`.
+Confirm that `PreviousProfileButton` is set to the mouse-button number you are pressing. The shipped default is Mouse 7; it moves backward through the same profile list that Mouse 8 moves forward through. Do not set it to `1`, `3`, or the same number as `ProfileSwitchButton`. You can instead use a supported Logitech G-key by setting `PreviousProfileGKey` from `1` to `18`.
 
 ## The on-screen profile popup does not appear
 
-The popup requires Windows, Python 3, and `scripts/ProfilePopup.pyw` to be running. Start it once per session, then confirm that **RRC Profile Popup** is visible in the Windows system tray. Right-click the icon and select **Test profile popup** first. If the three test labels do not appear in the top-right corner, the overlay is blocked or hidden; use borderless/windowed fullscreen instead of exclusive fullscreen. If the test works but Mouse 4 or Mouse 5 does not cycle the popup, ensure the side buttons have not been remapped or intercepted by another program. Also confirm that `INITIAL_PROFILE` in `ProfilePopup.pyw` matches `RecoilControlMode` in `RRSCRIPT.lua` before the helper starts.
+The popup requires Windows, Python 3, and `scripts/ProfilePopup.pyw` to be running. Start it once per session, then confirm that **RRC Profile Popup** is visible in the Windows system tray. Right-click the icon and select **Test profile popup** first. If the three test labels do not appear in the top-right corner, the overlay is blocked or hidden; use borderless/windowed fullscreen instead of exclusive fullscreen. If the test works but a profile control does not cycle the popup, verify its active `INPUT_MODE`. For `"keyboard"`, confirm that `PREVIOUS_PROFILE_KEY` and `NEXT_PROFILE_KEY` match the keys assigned in G HUB. For `"mouse"`, confirm that the two configured button numbers are different and are from `1` through `5`. Also confirm that `INITIAL_PROFILE` in `ProfilePopup.pyw` matches `RecoilControlMode` in `RRSCRIPT.lua` before the helper starts.
 
 ## The popup shows a different weapon from G HUB
 

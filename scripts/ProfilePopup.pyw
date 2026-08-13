@@ -1,10 +1,9 @@
 """Standalone Windows profile popup for RRSCRIPT.lua.
 
-This helper monitors physical Mouse 4 and Mouse 5 itself. Mouse 4 selects the
-previous profile and Mouse 5 selects the next profile. It does not receive
-messages from Logitech G HUB and requires no third-party packages.
-Keep INITIAL_PROFILE aligned with RecoilControlMode in RRSCRIPT.lua before
-starting the helper.
+This helper monitors configured mouse buttons or keyboard keys itself. It does
+not receive messages from Logitech G HUB and requires no third-party packages.
+Keep its profile and input settings aligned with RRSCRIPT.lua before starting
+the helper.
 """
 
 from __future__ import annotations
@@ -57,6 +56,21 @@ PROFILE_ORDER = (
 )
 INITIAL_PROFILE = "Custom"
 
+# Choose ``"keyboard"`` when G HUB maps the profile buttons to keys, or
+# ``"mouse"`` to monitor physical Windows mouse buttons 1 through 5.
+# The keyboard default matches a common G HUB mapping: Mouse 7 -> ``-`` and
+# Mouse 8 -> ``,``. Key matching is case-insensitive for letters.
+INPUT_MODE = "mouse"
+PREVIOUS_PROFILE_KEY = "4"
+NEXT_PROFILE_KEY = "5"
+
+# Used only when INPUT_MODE is "mouse". Keep these aligned with the Lua
+# profile-button values. Do not use Mouse 1 or Mouse 3 unless the Lua trigger
+# bindings were changed as well.
+PREVIOUS_PROFILE_MOUSE_BUTTON = 4
+NEXT_PROFILE_MOUSE_BUTTON = 5
+SUPPORTED_MOUSE_BUTTONS = frozenset(range(1, 6))
+
 if os.name != "nt":
     raise SystemExit("ProfilePopup.pyw runs on Windows only.")
 
@@ -78,7 +92,14 @@ WM_DESTROY = 0x0002
 WM_COMMAND = 0x0111
 WM_CTLCOLORSTATIC = 0x0138
 WM_TIMER = 0x0113
+WM_LBUTTONDOWN = 0x0201
+WM_MBUTTONDOWN = 0x0207
+WM_RBUTTONDOWN = 0x0204
 WM_XBUTTONDOWN = 0x020B
+WM_KEYDOWN = 0x0100
+WM_KEYUP = 0x0101
+WM_SYSKEYDOWN = 0x0104
+WM_SYSKEYUP = 0x0105
 WM_LBUTTONDBLCLK = 0x0203
 WM_RBUTTONUP = 0x0205
 WM_CONTEXTMENU = 0x007B
@@ -88,6 +109,7 @@ WM_NEXT_PROFILE = WM_APP + 2
 WM_PREVIOUS_PROFILE = WM_APP + 3
 
 WH_MOUSE_LL = 14
+WH_KEYBOARD_LL = 13
 HC_ACTION = 0
 XBUTTON1 = 0x0001  # Windows' first extended mouse button: Mouse 4.
 XBUTTON2 = 0x0002  # Windows' second extended mouse button: Mouse 5.
@@ -190,6 +212,16 @@ class MSLLHOOKSTRUCT(ctypes.Structure):
     ]
 
 
+class KBDLLHOOKSTRUCT(ctypes.Structure):
+    _fields_ = [
+        ("vkCode", wintypes.DWORD),
+        ("scanCode", wintypes.DWORD),
+        ("flags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
+
+
 class SIZE(ctypes.Structure):
     _fields_ = [("cx", ctypes.c_long), ("cy", ctypes.c_long)]
 
@@ -254,7 +286,7 @@ user32.SetTimer.argtypes = [wintypes.HWND, UINT_PTR, wintypes.UINT, wintypes.LPV
 user32.SetTimer.restype = UINT_PTR
 user32.KillTimer.argtypes = [wintypes.HWND, UINT_PTR]
 user32.KillTimer.restype = wintypes.BOOL
-user32.SetWindowsHookExW.argtypes = [ctypes.c_int, HOOKPROC, wintypes.HINSTANCE, wintypes.DWORD]
+user32.SetWindowsHookExW.argtypes = [ctypes.c_int, ctypes.c_void_p, wintypes.HINSTANCE, wintypes.DWORD]
 user32.SetWindowsHookExW.restype = HHOOK
 user32.UnhookWindowsHookEx.argtypes = [HHOOK]
 user32.UnhookWindowsHookEx.restype = wintypes.BOOL
@@ -320,6 +352,90 @@ def write_wide_string(structure: ctypes.Structure, field_name: str, value: str) 
     ctypes.memmove(ctypes.addressof(target), encoded, len(encoded))
 
 
+KEY_NAME_TO_VK = {chr(code): code for code in range(ord("A"), ord("Z") + 1)}
+KEY_NAME_TO_VK.update({str(number): ord(str(number)) for number in range(10)})
+KEY_NAME_TO_VK.update({
+    "-": 0xBD,
+    "=": 0xBB,
+    "[": 0xDB,
+    "]": 0xDD,
+    "\\": 0xDC,
+    ";": 0xBA,
+    "'": 0xDE,
+    ",": 0xBC,
+    ".": 0xBE,
+    "/": 0xBF,
+    "SPACE": 0x20,
+    "TAB": 0x09,
+    "ENTER": 0x0D,
+    "BACKSPACE": 0x08,
+    "ESC": 0x1B,
+})
+KEY_NAME_TO_VK.update({f"F{number}": 0x6F + number for number in range(1, 25)})
+
+
+def normalized_key_name(key_name: object) -> str | None:
+    if not isinstance(key_name, str):
+        return None
+    normalized = key_name.strip().upper()
+    return normalized if normalized else None
+
+
+def keyboard_key_to_vk(key_name: object) -> int | None:
+    normalized = normalized_key_name(key_name)
+    return KEY_NAME_TO_VK.get(normalized) if normalized else None
+
+
+def keyboard_key_label(key_name: object) -> str:
+    return normalized_key_name(key_name) or "<invalid key>"
+
+
+def validate_configuration() -> None:
+    if INITIAL_PROFILE not in PROFILE_ORDER:
+        raise ValueError("INITIAL_PROFILE must be one of the entries in PROFILE_ORDER.")
+
+    if INPUT_MODE not in ("mouse", "keyboard"):
+        raise ValueError('INPUT_MODE must be either "mouse" or "keyboard".')
+
+    if INPUT_MODE == "mouse":
+        for name, button in (
+            ("PREVIOUS_PROFILE_MOUSE_BUTTON", PREVIOUS_PROFILE_MOUSE_BUTTON),
+            ("NEXT_PROFILE_MOUSE_BUTTON", NEXT_PROFILE_MOUSE_BUTTON),
+        ):
+            if type(button) is not int or button not in SUPPORTED_MOUSE_BUTTONS:
+                raise ValueError(f"{name} must be a whole mouse-button number from 1 through 5.")
+        if PREVIOUS_PROFILE_MOUSE_BUTTON == NEXT_PROFILE_MOUSE_BUTTON:
+            raise ValueError("Previous and next profile buttons must be different.")
+        return
+
+    previous_key = keyboard_key_to_vk(PREVIOUS_PROFILE_KEY)
+    next_key = keyboard_key_to_vk(NEXT_PROFILE_KEY)
+    if previous_key is None:
+        raise ValueError("PREVIOUS_PROFILE_KEY must be a supported letter, number, symbol, or named key.")
+    if next_key is None:
+        raise ValueError("NEXT_PROFILE_KEY must be a supported letter, number, symbol, or named key.")
+    if previous_key == next_key:
+        raise ValueError("Previous and next profile keys must be different.")
+
+
+def mouse_button_from_event(message: int, event: MSLLHOOKSTRUCT) -> int | None:
+    """Return the physical button number for a low-level button-down event."""
+
+    if message == WM_LBUTTONDOWN:
+        return 1
+    if message == WM_MBUTTONDOWN:
+        return 2
+    if message == WM_RBUTTONDOWN:
+        return 3
+    if message == WM_XBUTTONDOWN:
+        xbutton = (event.mouseData >> 16) & 0xFFFF
+        if xbutton == XBUTTON1:
+            return 4
+        if xbutton == XBUTTON2:
+            return 5
+    return None
+
+
 APP: ProfilePopupApp | None = None
 
 
@@ -337,8 +453,7 @@ class ProfilePopupApp:
     class_name = "RrcStandaloneProfilePopup"
 
     def __init__(self) -> None:
-        if INITIAL_PROFILE not in PROFILE_ORDER:
-            raise ValueError("INITIAL_PROFILE must be one of the entries in PROFILE_ORDER.")
+        validate_configuration()
 
         self.profile_index = PROFILE_ORDER.index(INITIAL_PROFILE)
         self.instance = kernel32.GetModuleHandleW(None)
@@ -349,12 +464,18 @@ class ProfilePopupApp:
         self.next_label_hwnd: int | None = None
         self.mouse_hook: int | None = None
         self.mouse_proc = HOOKPROC(self.mouse_hook_proc)
+        self.keyboard_hook: int | None = None
+        self.keyboard_proc = HOOKPROC(self.keyboard_hook_proc)
+        self.keys_down: set[int] = set()
         self.tray_icon = user32.LoadIconW(None, ctypes.c_void_p(IDI_INFORMATION))
 
     def run(self) -> None:
         self.create_hidden_window()
         self.add_tray_icon()
-        self.install_mouse_hook()
+        if INPUT_MODE == "mouse":
+            self.install_mouse_hook()
+        else:
+            self.install_keyboard_hook()
         self.show_startup_notification()
 
         message = wintypes.MSG()
@@ -414,8 +535,9 @@ class ProfilePopupApp:
         data = self.notify_data(NIF_INFO)
         write_wide_string(data, "szInfoTitle", "RRC Profile Popup is running")
         write_wide_string(data, "szInfo", (
-            "This helper monitors Mouse 4 and Mouse 5 and shows the selected profile in the top-right corner. "
-            "Mouse 4 goes back; Mouse 5 goes forward. Right-click this tray icon for help or Exit."
+            "This helper shows the selected profile in the top-right corner. "
+            f"{self.input_description()} goes back; {self.next_input_description()} goes forward. "
+            "Right-click this tray icon for help or Exit."
         ))
         data.uTimeoutOrVersion = 8000
         data.dwInfoFlags = NIIF_INFO
@@ -430,25 +552,71 @@ class ProfilePopupApp:
         return data
 
     def install_mouse_hook(self) -> None:
-        self.mouse_hook = user32.SetWindowsHookExW(WH_MOUSE_LL, self.mouse_proc, self.instance, 0)
+        self.mouse_hook = user32.SetWindowsHookExW(
+            WH_MOUSE_LL,
+            ctypes.cast(self.mouse_proc, ctypes.c_void_p),
+            self.instance,
+            0,
+        )
         if not self.mouse_hook:
-            raise_last_error("Unable to monitor Mouse 4 and Mouse 5")
+            raise_last_error("Unable to monitor the configured profile buttons")
 
     def remove_mouse_hook(self) -> None:
         if self.mouse_hook:
             user32.UnhookWindowsHookEx(self.mouse_hook)
             self.mouse_hook = None
 
+    def install_keyboard_hook(self) -> None:
+        self.keyboard_hook = user32.SetWindowsHookExW(
+            WH_KEYBOARD_LL,
+            ctypes.cast(self.keyboard_proc, ctypes.c_void_p),
+            self.instance,
+            0,
+        )
+        if not self.keyboard_hook:
+            raise_last_error("Unable to monitor the configured profile keys")
+
+    def remove_keyboard_hook(self) -> None:
+        if self.keyboard_hook:
+            user32.UnhookWindowsHookEx(self.keyboard_hook)
+            self.keyboard_hook = None
+        self.keys_down.clear()
+
+    def input_description(self) -> str:
+        if INPUT_MODE == "mouse":
+            return f"Mouse {PREVIOUS_PROFILE_MOUSE_BUTTON}"
+        return f"Key {keyboard_key_label(PREVIOUS_PROFILE_KEY)}"
+
+    def next_input_description(self) -> str:
+        if INPUT_MODE == "mouse":
+            return f"Mouse {NEXT_PROFILE_MOUSE_BUTTON}"
+        return f"Key {keyboard_key_label(NEXT_PROFILE_KEY)}"
+
     def mouse_hook_proc(self, code: int, wparam: int, lparam: int) -> int:
-        if code == HC_ACTION and wparam == WM_XBUTTONDOWN:
+        if code == HC_ACTION:
             event = ctypes.cast(lparam, ctypes.POINTER(MSLLHOOKSTRUCT)).contents
-            button = (event.mouseData >> 16) & 0xFFFF
-            if button == XBUTTON1 and self.hwnd:
+            button = mouse_button_from_event(wparam, event)
+            if button == PREVIOUS_PROFILE_MOUSE_BUTTON and self.hwnd:
                 user32.PostMessageW(self.hwnd, WM_PREVIOUS_PROFILE, 0, 0)
-            elif button == XBUTTON2 and self.hwnd:
+            elif button == NEXT_PROFILE_MOUSE_BUTTON and self.hwnd:
                 user32.PostMessageW(self.hwnd, WM_NEXT_PROFILE, 0, 0)
 
         return user32.CallNextHookEx(self.mouse_hook, code, wparam, lparam)
+
+    def keyboard_hook_proc(self, code: int, wparam: int, lparam: int) -> int:
+        if code == HC_ACTION:
+            event = ctypes.cast(lparam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
+            key_code = event.vkCode
+            if wparam in (WM_KEYUP, WM_SYSKEYUP):
+                self.keys_down.discard(key_code)
+            elif wparam in (WM_KEYDOWN, WM_SYSKEYDOWN) and key_code not in self.keys_down:
+                self.keys_down.add(key_code)
+                if key_code == keyboard_key_to_vk(PREVIOUS_PROFILE_KEY) and self.hwnd:
+                    user32.PostMessageW(self.hwnd, WM_PREVIOUS_PROFILE, 0, 0)
+                elif key_code == keyboard_key_to_vk(NEXT_PROFILE_KEY) and self.hwnd:
+                    user32.PostMessageW(self.hwnd, WM_NEXT_PROFILE, 0, 0)
+
+        return user32.CallNextHookEx(self.keyboard_hook, code, wparam, lparam)
 
     def handle_message(self, hwnd: int, message: int, wparam: int, lparam: int) -> int:
         if message == WM_NEXT_PROFILE:
@@ -495,6 +663,7 @@ class ProfilePopupApp:
 
         if message == WM_DESTROY:
             self.remove_mouse_hook()
+            self.remove_keyboard_hook()
             self.remove_tray_icon()
             user32.PostQuitMessage(0)
             return 0
@@ -672,10 +841,12 @@ class ProfilePopupApp:
     def show_about(self) -> None:
         user32.MessageBoxW(
             self.hwnd,
-            "This standalone helper monitors physical Mouse 4 and Mouse 5 and follows the same "
-            "profile order as RRSCRIPT.lua. Mouse 4 selects the previous profile and Mouse 5 selects the next profile. It does not receive messages from or "
+            "This standalone helper monitors the configured mouse buttons or keyboard keys and follows the same "
+            "profile order as RRSCRIPT.lua. "
+            f"{self.input_description()} selects the previous profile and {self.next_input_description()} selects the next profile. "
+            "It does not receive messages from or "
             "access files through Logitech G HUB.\n\n"
-            "Set INITIAL_PROFILE to the same value as RecoilControlMode before "
+            "Set INITIAL_PROFILE and the active input-mode fields before "
             "starting it. If the popup gets out of sync, right-click the tray icon and choose Set popup profile, then select the weapon currently active in G HUB. Right-click the tray icon and select Exit to close it.",
             "About RRC Profile Popup",
             MB_OK | MB_ICONINFORMATION,
@@ -683,15 +854,26 @@ class ProfilePopupApp:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Standalone Mouse 4/5 profile popup for RRSCRIPT.lua.")
+    parser = argparse.ArgumentParser(description="Standalone configurable mouse/keyboard profile popup for RRSCRIPT.lua.")
     parser.add_argument("--validate-only", action="store_true", help="Validate the local configuration without starting the helper.")
     arguments = parser.parse_args()
 
-    if INITIAL_PROFILE not in PROFILE_ORDER:
-        raise SystemExit("INITIAL_PROFILE must be one of the values in PROFILE_ORDER.")
+    try:
+        validate_configuration()
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
     if arguments.validate_only:
-        print(f"Profile popup configuration is valid ({INITIAL_PROFILE} is the starting profile).")
+        if INPUT_MODE == "mouse":
+            previous_input = f"Mouse {PREVIOUS_PROFILE_MOUSE_BUTTON}"
+            next_input = f"Mouse {NEXT_PROFILE_MOUSE_BUTTON}"
+        else:
+            previous_input = f"Key {keyboard_key_label(PREVIOUS_PROFILE_KEY)}"
+            next_input = f"Key {keyboard_key_label(NEXT_PROFILE_KEY)}"
+        print(
+            "Profile popup configuration is valid "
+            f"({INITIAL_PROFILE} starts; {previous_input} goes back; {next_input} goes forward)."
+        )
         return
 
     global APP
