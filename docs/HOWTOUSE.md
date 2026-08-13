@@ -28,12 +28,6 @@ To change the active weapon preset, update the `RecoilControlMode` line near the
 
 ```lua
 RecoilControlMode = "R4C" -- Options: "P90", "SMG11", "SMG12", "R4C", "AK74M", "F2", "M762", "XK23", "Scorpion", "K1A", "MPX", "Vector", "Custom" -- More coming soon
-
-## How to Edit & Create Custom Profiles
-
-
-```lua
-RecoilControlMode = "R4C" -- Options: "P90", "SMG11", "SMG12", "R4C", "AK74M", "F2", "M762", "XK23", "Scorpion", "K1A", "MPX", "Vector", "Custom" -- More coming soon
 ```
 
 ## How to Edit and Create Custom Profiles
