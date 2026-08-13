@@ -1,7 +1,8 @@
 """Standalone Windows profile popup for RRSCRIPT.lua.
 
-This helper monitors physical Mouse 5 (the second side button) itself. It does
-not receive messages from Logitech G HUB and requires no third-party packages.
+This helper monitors physical Mouse 4 and Mouse 5 itself. Mouse 4 selects the
+previous profile and Mouse 5 selects the next profile. It does not receive
+messages from Logitech G HUB and requires no third-party packages.
 Keep INITIAL_PROFILE aligned with RecoilControlMode in RRSCRIPT.lua before
 starting the helper.
 """
@@ -83,10 +84,12 @@ WM_RBUTTONUP = 0x0205
 WM_CONTEXTMENU = 0x007B
 WM_APP = 0x8000
 WM_TRAYICON = WM_APP + 1
-WM_PROFILE_SWITCH = WM_APP + 2
+WM_NEXT_PROFILE = WM_APP + 2
+WM_PREVIOUS_PROFILE = WM_APP + 3
 
 WH_MOUSE_LL = 14
 HC_ACTION = 0
+XBUTTON1 = 0x0001  # Windows' first extended mouse button: Mouse 4.
 XBUTTON2 = 0x0002  # Windows' second extended mouse button: Mouse 5.
 
 WS_OVERLAPPED = 0x00000000
@@ -95,7 +98,8 @@ WS_BORDER = 0x00800000
 WS_EX_TOOLWINDOW = 0x00000080
 WS_EX_TOPMOST = 0x00000008
 WS_EX_NOACTIVATE = 0x08000000
-WS_EX_LAYERED = 0x00080000
+WS_CHILD = 0x40000000
+WS_VISIBLE = 0x10000000
 SS_CENTER = 0x00000001
 SS_CENTERIMAGE = 0x00000200
 
@@ -104,7 +108,6 @@ SW_SHOWNOACTIVATE = 4
 HWND_TOPMOST = wintypes.HWND(-1)
 SWP_NOACTIVATE = 0x0010
 SWP_SHOWWINDOW = 0x0040
-LWA_ALPHA = 0x00000002
 
 NIM_ADD = 0x00000000
 NIM_MODIFY = 0x00000001
@@ -119,24 +122,28 @@ NOTIFYICON_VERSION_4 = 4
 IDI_INFORMATION = 32516
 
 MF_STRING = 0x00000000
+MF_CHECKED = 0x00000008
 MF_SEPARATOR = 0x00000800
+MF_POPUP = 0x00000010
 TPM_RIGHTBUTTON = 0x0002
 
 ID_ABOUT = 1001
 ID_TEST = 1002
 ID_EXIT = 1003
+ID_SET_PROFILE_BASE = 2000
 POPUP_TIMER_ID = 1
 POPUP_DURATION_MS = 1500
 POPUP_MARGIN_PX = 50
-POPUP_OPACITY = 128  # 50% opacity, where 255 is fully opaque.
 POPUP_HORIZONTAL_PADDING_PX = 8
-POPUP_VERTICAL_PADDING_PX = 4
+POPUP_VERTICAL_PADDING_PX = 6
+POPUP_LINE_GAP_PX = 2
 
 WM_SETFONT = 0x0030
 DEFAULT_GUI_FONT = 17
 WHITE_BRUSH = 0
 BLACK = 0x000000
 WHITE = 0xFFFFFF
+MUTED_GRAY = 0x929292
 MB_OK = 0x00000000
 MB_ICONINFORMATION = 0x00000040
 SPI_GETWORKAREA = 0x0030
@@ -237,8 +244,6 @@ user32.SetWindowPos.argtypes = [
     ctypes.c_int,
     wintypes.UINT,
 ]
-user32.SetLayeredWindowAttributes.argtypes = [wintypes.HWND, wintypes.COLORREF, wintypes.BYTE, wintypes.DWORD]
-user32.SetLayeredWindowAttributes.restype = wintypes.BOOL
 user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
 user32.GetCursorPos.restype = wintypes.BOOL
 user32.SystemParametersInfoW.argtypes = [wintypes.UINT, wintypes.UINT, wintypes.LPVOID, wintypes.UINT]
@@ -339,6 +344,9 @@ class ProfilePopupApp:
         self.instance = kernel32.GetModuleHandleW(None)
         self.hwnd: int | None = None
         self.popup_hwnd: int | None = None
+        self.previous_label_hwnd: int | None = None
+        self.current_label_hwnd: int | None = None
+        self.next_label_hwnd: int | None = None
         self.mouse_hook: int | None = None
         self.mouse_proc = HOOKPROC(self.mouse_hook_proc)
         self.tray_icon = user32.LoadIconW(None, ctypes.c_void_p(IDI_INFORMATION))
@@ -360,6 +368,7 @@ class ProfilePopupApp:
         window_class = WNDCLASSW()
         window_class.lpfnWndProc = window_proc
         window_class.hInstance = self.instance
+        window_class.hbrBackground = gdi32.GetStockObject(WHITE_BRUSH)
         window_class.lpszClassName = self.class_name
 
         atom = user32.RegisterClassW(ctypes.byref(window_class))
@@ -405,8 +414,8 @@ class ProfilePopupApp:
         data = self.notify_data(NIF_INFO)
         write_wide_string(data, "szInfoTitle", "RRC Profile Popup is running")
         write_wide_string(data, "szInfo", (
-            "This helper monitors Mouse 5 and shows the selected profile beside "
-            "your cursor. Right-click this tray icon for help or Exit."
+            "This helper monitors Mouse 4 and Mouse 5 and shows the selected profile in the top-right corner. "
+            "Mouse 4 goes back; Mouse 5 goes forward. Right-click this tray icon for help or Exit."
         ))
         data.uTimeoutOrVersion = 8000
         data.dwInfoFlags = NIIF_INFO
@@ -423,7 +432,7 @@ class ProfilePopupApp:
     def install_mouse_hook(self) -> None:
         self.mouse_hook = user32.SetWindowsHookExW(WH_MOUSE_LL, self.mouse_proc, self.instance, 0)
         if not self.mouse_hook:
-            raise_last_error("Unable to monitor Mouse 5")
+            raise_last_error("Unable to monitor Mouse 4 and Mouse 5")
 
     def remove_mouse_hook(self) -> None:
         if self.mouse_hook:
@@ -434,18 +443,27 @@ class ProfilePopupApp:
         if code == HC_ACTION and wparam == WM_XBUTTONDOWN:
             event = ctypes.cast(lparam, ctypes.POINTER(MSLLHOOKSTRUCT)).contents
             button = (event.mouseData >> 16) & 0xFFFF
-            if button == XBUTTON2 and self.hwnd:
-                user32.PostMessageW(self.hwnd, WM_PROFILE_SWITCH, 0, 0)
+            if button == XBUTTON1 and self.hwnd:
+                user32.PostMessageW(self.hwnd, WM_PREVIOUS_PROFILE, 0, 0)
+            elif button == XBUTTON2 and self.hwnd:
+                user32.PostMessageW(self.hwnd, WM_NEXT_PROFILE, 0, 0)
 
         return user32.CallNextHookEx(self.mouse_hook, code, wparam, lparam)
 
     def handle_message(self, hwnd: int, message: int, wparam: int, lparam: int) -> int:
-        if message == WM_PROFILE_SWITCH:
-            self.cycle_profile()
+        if message == WM_NEXT_PROFILE:
+            self.next_profile()
             return 0
 
-        if message == WM_CTLCOLORSTATIC and lparam == self.popup_hwnd:
-            gdi32.SetTextColor(wparam, BLACK)
+        if message == WM_PREVIOUS_PROFILE:
+            self.previous_profile()
+            return 0
+
+        if message == WM_CTLCOLORSTATIC:
+            if lparam in (self.previous_label_hwnd, self.next_label_hwnd):
+                gdi32.SetTextColor(wparam, MUTED_GRAY)
+            else:
+                gdi32.SetTextColor(wparam, BLACK)
             gdi32.SetBkColor(wparam, WHITE)
             return gdi32.GetStockObject(WHITE_BRUSH)
 
@@ -457,10 +475,12 @@ class ProfilePopupApp:
 
         if message == WM_COMMAND:
             command = wparam & 0xFFFF
-            if command == ID_ABOUT:
+            if ID_SET_PROFILE_BASE <= command < ID_SET_PROFILE_BASE + len(PROFILE_ORDER):
+                self.set_profile(command - ID_SET_PROFILE_BASE)
+            elif command == ID_ABOUT:
                 self.show_about()
             elif command == ID_TEST:
-                self.show_popup("TEST")
+                self.show_popup("Previous", "TEST", "Next")
             elif command == ID_EXIT:
                 user32.DestroyWindow(hwnd)
             return 0
@@ -481,35 +501,56 @@ class ProfilePopupApp:
 
         return user32.DefWindowProcW(hwnd, message, wparam, lparam)
 
-    def cycle_profile(self) -> None:
+    def next_profile(self) -> None:
         self.profile_index = (self.profile_index + 1) % len(PROFILE_ORDER)
-        self.show_popup(PROFILE_ORDER[self.profile_index])
+        self.show_profile_context()
 
-    def show_popup(self, profile: str) -> None:
+    def previous_profile(self) -> None:
+        self.profile_index = (self.profile_index - 1) % len(PROFILE_ORDER)
+        self.show_profile_context()
+
+    def set_profile(self, profile_index: int) -> None:
+        self.profile_index = profile_index
+        self.show_profile_context()
+
+    def show_profile_context(self) -> None:
+        previous_profile = PROFILE_ORDER[(self.profile_index - 1) % len(PROFILE_ORDER)]
+        current_profile = PROFILE_ORDER[self.profile_index]
+        next_profile = PROFILE_ORDER[(self.profile_index + 1) % len(PROFILE_ORDER)]
+        self.show_popup(previous_profile, current_profile, next_profile)
+
+    def show_popup(self, previous_profile: str, current_profile: str, next_profile: str) -> None:
         if not self.popup_hwnd:
             self.popup_hwnd = user32.CreateWindowExW(
-                WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED,
-                "STATIC",
+                WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+                self.class_name,
                 "",
-                WS_POPUP | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
+                WS_POPUP | WS_BORDER,
                 0,
                 0,
                 0,
                 0,
-                self.hwnd,
+                None,
                 None,
                 self.instance,
                 None,
             )
             if not self.popup_hwnd:
                 raise_last_error("Unable to create the profile popup")
-            font = gdi32.GetStockObject(DEFAULT_GUI_FONT)
-            user32.SendMessageW(self.popup_hwnd, WM_SETFONT, font, 1)
-            user32.SetLayeredWindowAttributes(self.popup_hwnd, 0, POPUP_OPACITY, LWA_ALPHA)
 
-        text = f"Profile: {profile}"
-        user32.SetWindowTextW(self.popup_hwnd, text)
-        width, height = self.popup_size(text)
+            self.previous_label_hwnd = self.create_profile_label()
+            self.current_label_hwnd = self.create_profile_label()
+            self.next_label_hwnd = self.create_profile_label()
+
+        previous_text = f"Previous: {previous_profile}"
+        current_text = f"Current: {current_profile}"
+        next_text = f"Next: {next_profile}"
+        user32.SetWindowTextW(self.previous_label_hwnd, previous_text)
+        user32.SetWindowTextW(self.current_label_hwnd, current_text)
+        user32.SetWindowTextW(self.next_label_hwnd, next_text)
+
+        width, height, line_height = self.popup_size((previous_text, current_text, next_text))
+        self.layout_profile_labels(width, line_height)
         work_area = self.work_area()
         x = work_area.right - POPUP_MARGIN_PX - width
         y = work_area.top + POPUP_MARGIN_PX
@@ -525,7 +566,29 @@ class ProfilePopupApp:
         )
         user32.SetTimer(self.hwnd, POPUP_TIMER_ID, POPUP_DURATION_MS, None)
 
-    def popup_size(self, text: str) -> tuple[int, int]:
+    def create_profile_label(self) -> int:
+        label = user32.CreateWindowExW(
+            0,
+            "STATIC",
+            "",
+            WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE,
+            0,
+            0,
+            0,
+            0,
+            self.popup_hwnd,
+            None,
+            self.instance,
+            None,
+        )
+        if not label:
+            raise_last_error("Unable to create a profile popup label")
+
+        font = gdi32.GetStockObject(DEFAULT_GUI_FONT)
+        user32.SendMessageW(label, WM_SETFONT, font, 1)
+        return label
+
+    def popup_size(self, text_lines: tuple[str, str, str]) -> tuple[int, int, int]:
         device_context = user32.GetDC(self.popup_hwnd)
         if not device_context:
             raise_last_error("Unable to measure the popup text")
@@ -533,16 +596,36 @@ class ProfilePopupApp:
         try:
             font = gdi32.GetStockObject(DEFAULT_GUI_FONT)
             previous_font = gdi32.SelectObject(device_context, font)
-            text_size = SIZE()
-            if not gdi32.GetTextExtentPoint32W(device_context, text, len(text), ctypes.byref(text_size)):
-                raise_last_error("Unable to measure the popup text")
+            text_sizes = []
+            for text in text_lines:
+                text_size = SIZE()
+                if not gdi32.GetTextExtentPoint32W(device_context, text, len(text), ctypes.byref(text_size)):
+                    raise_last_error("Unable to measure the popup text")
+                text_sizes.append(text_size)
             gdi32.SelectObject(device_context, previous_font)
         finally:
             user32.ReleaseDC(self.popup_hwnd, device_context)
 
-        width = text_size.cx + (POPUP_HORIZONTAL_PADDING_PX * 2) + 2
-        height = text_size.cy + (POPUP_VERTICAL_PADDING_PX * 2) + 2
-        return width, height
+        line_height = max(size.cy for size in text_sizes)
+        width = max(size.cx for size in text_sizes) + (POPUP_HORIZONTAL_PADDING_PX * 2) + 2
+        height = (line_height * 3) + (POPUP_VERTICAL_PADDING_PX * 2) + (POPUP_LINE_GAP_PX * 2) + 2
+        return width, height, line_height
+
+    def layout_profile_labels(self, width: int, line_height: int) -> None:
+        label_width = width - (POPUP_HORIZONTAL_PADDING_PX * 2) - 2
+        y = POPUP_VERTICAL_PADDING_PX + 1
+
+        for label in (self.previous_label_hwnd, self.current_label_hwnd, self.next_label_hwnd):
+            user32.SetWindowPos(
+                label,
+                None,
+                POPUP_HORIZONTAL_PADDING_PX,
+                y,
+                label_width,
+                line_height,
+                SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            )
+            y += line_height + POPUP_LINE_GAP_PX
 
     def work_area(self) -> wintypes.RECT:
         area = wintypes.RECT()
@@ -564,6 +647,8 @@ class ProfilePopupApp:
             user32.AppendMenuW(menu, MF_STRING, ID_ABOUT, "About RRC Profile Popup")
             user32.AppendMenuW(menu, MF_STRING, ID_TEST, "Test profile popup")
             user32.AppendMenuW(menu, MF_SEPARATOR, 0, None)
+            self.add_profile_selection_menu(menu)
+            user32.AppendMenuW(menu, MF_SEPARATOR, 0, None)
             user32.AppendMenuW(menu, MF_STRING, ID_EXIT, "Exit")
 
             cursor = wintypes.POINT()
@@ -573,21 +658,32 @@ class ProfilePopupApp:
         finally:
             user32.DestroyMenu(menu)
 
+    def add_profile_selection_menu(self, parent_menu: int) -> None:
+        profile_menu = user32.CreatePopupMenu()
+        if not profile_menu:
+            raise_last_error("Unable to create the profile selection menu")
+
+        for index, profile in enumerate(PROFILE_ORDER):
+            flags = MF_STRING | (MF_CHECKED if index == self.profile_index else 0)
+            user32.AppendMenuW(profile_menu, flags, ID_SET_PROFILE_BASE + index, profile)
+
+        user32.AppendMenuW(parent_menu, MF_POPUP, profile_menu, "Set popup profile")
+
     def show_about(self) -> None:
         user32.MessageBoxW(
             self.hwnd,
-            "This standalone helper monitors physical Mouse 5 and cycles the same "
-            "profile order as RRSCRIPT.lua. It does not receive messages from or "
+            "This standalone helper monitors physical Mouse 4 and Mouse 5 and follows the same "
+            "profile order as RRSCRIPT.lua. Mouse 4 selects the previous profile and Mouse 5 selects the next profile. It does not receive messages from or "
             "access files through Logitech G HUB.\n\n"
             "Set INITIAL_PROFILE to the same value as RecoilControlMode before "
-            "starting it. Right-click the tray icon and select Exit to close it.",
+            "starting it. If the popup gets out of sync, right-click the tray icon and choose Set popup profile, then select the weapon currently active in G HUB. Right-click the tray icon and select Exit to close it.",
             "About RRC Profile Popup",
             MB_OK | MB_ICONINFORMATION,
         )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Standalone Mouse 5 profile popup for RRSCRIPT.lua.")
+    parser = argparse.ArgumentParser(description="Standalone Mouse 4/5 profile popup for RRSCRIPT.lua.")
     parser.add_argument("--validate-only", action="store_true", help="Validate the local configuration without starting the helper.")
     arguments = parser.parse_args()
 

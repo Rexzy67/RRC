@@ -3,7 +3,7 @@
 This guide explains the settings in `RRSCRIPT.lua`, how to select a preset, and how to submit a calibration update.
 
 > [!IMPORTANT]
-> The current preset values assume a Flash Hider is equipped. Changing attachments, in-game sensitivity, DPI, or resolution can change the result. Test any configuration in an environment where automation is permitted before relying on it.
+> The current preset values require both a **Flash Hider** and a **Vertical Grip**. Set **Mouse ADS Sensitivity** to **40 on every scope**. Changing attachments, ADS sensitivity, in-game sensitivity, DPI, or resolution can change the result. Test any configuration in an environment where automation is permitted before relying on it.
 
 > [!IMPORTANT]
 > ## Start the popup helper first
@@ -27,8 +27,8 @@ The values at the top of `RRSCRIPT.lua` are intended to be configured. Keep thei
 | `ToggleKey` | String | `"CapsLock"` | Lock key checked when `RequireToggle` is enabled, such as `"CapsLock"`, `"NumLock"`, or `"ScrollLock"`. |
 | `DelayRate` | Integer | `20` | Milliseconds between mouse-movement ticks. Use a positive whole number. |
 | `ProfileSwitchButton` | Integer | `5` | Mouse-button number that cycles to the next profile. Button `5` is commonly a side button; do not use `1` or `3`. |
-| `TemporaryToggleButton` | Integer | `4` | Mouse-button number that temporarily disables or re-enables recoil control. Set to `0` to disable this control. Do not use `1`, `3`, or the configured profile-switch button. |
-| `TemporaryToggleGKey` | Integer | `0` | Optional Logitech G-key number (`1`–`18`) for the temporary recoil toggle. Set to `0` when unused. |
+| `PreviousProfileButton` | Integer | `4` | Mouse-button number that selects the previous profile. Set to `0` to disable this control. Do not use `1`, `3`, or the configured next-profile button. |
+| `PreviousProfileGKey` | Integer | `0` | Optional Logitech G-key number (`1`–`18`) for the previous-profile control. Set to `0` when unused. |
 | `MouseDPI` | Integer | `900` | Your mouse's current DPI. Enter a positive value. |
 | `VerticalSensitivity` | Number | `10` | Your current Rainbow Six Siege vertical sensitivity. Enter a positive value. |
 | `HorizontalSensitivity` | Number | `20` | Your current Rainbow Six Siege horizontal sensitivity. It is recorded for calibration compatibility but does not alter vertical-only compensation. |
@@ -116,7 +116,9 @@ If the mode name does not match a built-in preset or `Custom`, the current scrip
 
 ## Switching profiles in G HUB
 
-Press the mouse button set by `ProfileSwitchButton` to move to the next profile. The default is button `5`, which is commonly a mouse side button. Every press cycles through the profiles in this order:
+Press the mouse button set by `ProfileSwitchButton` to move to the next profile. The default is Mouse 5, which is commonly the second mouse side button. Press `PreviousProfileButton` (default: Mouse 4, the first mouse side button) to move back one profile. Both controls wrap around at the ends of the list.
+
+Every press cycles through the profiles in this order:
 
 `P90` → `SMG11` → `SMG12` → `R4C` → `AK74M` → `F2` → `M762` → `XK23` → `Scorpion` → `K1A` → `MPX` → `Vector` → `T-5` → `9x19` → `TCSG12` → `MP7` → `UZK50GI` → `MP5` → `MP5SD` → `MP5K` → `416-C` → `UMP45` → `P10 Roni` → `SPEAR .308` → `PARA-308` → `556XI` → `L85A2` → `M4` → `AK-12` → `552 COMMANDO` → `C8-SFW` → `V308` → `T-95 LSW` → `C7E` → `F90` → `G36C` → `POF-9` → `Custom` → `P90`
 
@@ -126,25 +128,21 @@ G HUB writes the active profile and its strength to the script output console at
 Current weapon profile: R4C (strength: 18; 900 DPI/V10 baseline: 18)
 ```
 
-Do not set `ProfileSwitchButton` to `1` or `3`, because those are the inputs used for the script's fire-and-aim trigger. The profile switch remains available even if `EnableRCS` is set to `false` or the lock-key requirement is not satisfied.
+Do not set `ProfileSwitchButton` or `PreviousProfileButton` to `1` or `3`, because those are the inputs used for the script's fire-and-aim trigger. The profile controls remain available even if `EnableRCS` is set to `false` or the lock-key requirement is not satisfied.
 
 > [!NOTE]
 > G HUB's Lua event API receives mouse-button and Logitech G-key events, but it does not receive ordinary letter-key presses. A letter such as `P` therefore cannot be used directly as `ProfileSwitchButton`. Use any spare mouse button for profile switching; the standalone popup helper follows its Mouse 5 default.
 
-## Temporary recoil toggle
-
-Press `TemporaryToggleButton` (default: mouse button `4`) to disable recoil compensation without changing the selected weapon profile. Press it again to re-enable recoil control; the script restores and prints the saved profile. You can also set `TemporaryToggleGKey` to a Logitech G-key number from `1` through `18` if your hardware supports G-keys.
-
-The temporary toggle only affects recoil control. The master `EnableRCS` setting and the optional `RequireToggle` lock-key requirement still apply. If you switch profiles while temporarily disabled, the latest selected profile is saved and restored when you re-enable recoil control.
+You can also set `PreviousProfileGKey` to a Logitech G-key number from `1` through `18` if your hardware supports G-keys.
 
 ## On-screen profile popup (Windows)
 
-The G HUB script cannot create a Windows overlay by itself, so the repository includes a standalone Python helper at `scripts/ProfilePopup.pyw`. It monitors physical Mouse 5 itself, follows the same profile order as `RRSCRIPT.lua`, and displays the active profile beside the cursor for 1.5 seconds without taking keyboard focus. It does not receive messages from or access files through Logitech G HUB.
+The G HUB script cannot create a Windows overlay by itself, so the repository includes a standalone Python helper at `scripts/ProfilePopup.pyw`. It monitors physical Mouse 4 and Mouse 5 itself, follows the same profile order as `RRSCRIPT.lua`, and displays the previous, current, and next profiles for 1.5 seconds without taking keyboard focus. The current profile is solid black text; its neighboring profiles are muted gray. It does not receive messages from or access files through Logitech G HUB.
 
 1. Install Python 3 for Windows if it is not already installed.
 2. Ensure `INITIAL_PROFILE` at the top of `scripts/ProfilePopup.pyw` matches `RecoilControlMode` in `RRSCRIPT.lua`. Both default to `Custom`.
 3. Double-click `scripts/ProfilePopup.pyw` once per Windows session. It places **RRC Profile Popup** in the Windows system tray.
-4. Keep `ProfileSwitchButton = 5` in `RRSCRIPT.lua`, then switch profiles with Mouse 5. Both the Lua script and Python helper cycle through the same order.
+4. Keep `ProfileSwitchButton = 5` and `PreviousProfileButton = 4` in `RRSCRIPT.lua`. Mouse 5 moves forward and Mouse 4 moves back. Both the Lua script and Python helper follow the same order.
 
 Alternatively, run it manually from the repository root:
 
@@ -152,11 +150,15 @@ Alternatively, run it manually from the repository root:
 pythonw .\scripts\ProfilePopup.pyw
 ```
 
-At startup, the system-tray icon displays a notification explaining that it monitors Mouse 5 and shows the selected profile beside the cursor. Double-click the icon, or right-click it and select **About RRC Profile Popup**, to view the explanation again. To close the helper at any time, right-click the icon and select **Exit**.
+At startup, the system-tray icon displays a notification explaining that it monitors Mouse 4 and Mouse 5. The popup is fully opaque and positioned in the top-right corner with 50 px margins. It automatically sizes itself to the longest displayed profile name. Double-click the icon, or right-click it and select **About RRC Profile Popup**, to view the explanation again. To close the helper at any time, right-click the icon and select **Exit**.
 
-To test the Windows helper without G HUB, right-click its tray icon and select **Test profile popup**. If `Profile: TEST` appears beside the cursor, the helper and overlay are working. If the test works but Mouse 5 does not trigger it, another program may be intercepting the side button.
+### Re-sync a desynchronized popup
 
-If the mouse popup does not appear, ensure only one copy of the helper is running and that Mouse 5 has not been remapped or intercepted by another program. The popup may not appear over applications running in exclusive fullscreen mode; borderless or windowed fullscreen is recommended.
+If the popup does not match the profile active in G HUB, right-click the **RRC Profile Popup** tray icon, choose **Set popup profile**, and select the weapon currently active in G HUB. This changes only the Python helper's profile position; it does not change `RRSCRIPT.lua` or send input to the game. After selecting the matching weapon, Mouse 4 and Mouse 5 continue backward and forward from that profile.
+
+To test the Windows helper without G HUB, right-click its tray icon and select **Test profile popup**. If the previous/current/next test names appear in the top-right corner, the helper and overlay are working. If the test works but Mouse 4 or Mouse 5 does not trigger it, another program may be intercepting the side button.
+
+If the mouse popup does not appear, ensure only one copy of the helper is running and that Mouse 4 or Mouse 5 has not been remapped or intercepted by another program. The popup may not appear over applications running in exclusive fullscreen mode; borderless or windowed fullscreen is recommended.
 
 ## Trigger behavior
 

@@ -11,13 +11,13 @@ DelayRate = 20
 -- Mouse button 5 is commonly a side button. Do not use buttons 1 or 3 here.
 ProfileSwitchButton = 5
 
--- Press this mouse button to temporarily disable or re-enable recoil control.
--- Set to 0 to disable this mouse-button toggle. Do not use buttons 1, 3, or ProfileSwitchButton.
-TemporaryToggleButton = 4
+-- Press this mouse button to return to the previous weapon profile.
+-- Set to 0 to disable this control. Do not use buttons 1, 3, or ProfileSwitchButton.
+PreviousProfileButton = 4
 
--- Optional Logitech G-key (G1 through G18) for the same temporary toggle.
+-- Optional Logitech G-key (G1 through G18) for the same previous-profile control.
 -- Set to 0 when unused. Normal letter keys are not exposed to G HUB Lua scripts.
-TemporaryToggleGKey = 0
+PreviousProfileGKey = 0
 
 ----- DPI AND SENSITIVITY CALIBRATION -----
 -- Presets are calibrated at 900 DPI, Vertical 10, and Horizontal 20.
@@ -164,8 +164,6 @@ function PrintActiveProfile()
 end
 
 CurrentProfileIndex = GetProfileIndex(RecoilControlMode)
-SavedProfileIndex = CurrentProfileIndex
-TemporaryRCSDisabled = false
 
 if CurrentProfileIndex ~= nil then
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
@@ -182,42 +180,27 @@ function CycleProfile()
     end
 
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
-
-    if TemporaryRCSDisabled then
-        SavedProfileIndex = CurrentProfileIndex
-    end
-
     PrintActiveProfile()
 end
 
-function IsTemporaryTogglePressed(event, arg)
+function PreviousProfile()
+    if CurrentProfileIndex == nil then
+        CurrentProfileIndex = #ProfileOrder
+    else
+        CurrentProfileIndex = ((CurrentProfileIndex - 2) % #ProfileOrder) + 1
+    end
+
+    SetActiveProfile(ProfileOrder[CurrentProfileIndex])
+    PrintActiveProfile()
+end
+
+function IsPreviousProfilePressed(event, arg)
     return (event == "MOUSE_BUTTON_PRESSED"
-            and TemporaryToggleButton > 0
-            and arg == TemporaryToggleButton)
+            and PreviousProfileButton > 0
+            and arg == PreviousProfileButton)
         or (event == "G_PRESSED"
-            and TemporaryToggleGKey > 0
-            and arg == TemporaryToggleGKey)
-end
-
-function ToggleTemporaryRCS()
-    TemporaryRCSDisabled = not TemporaryRCSDisabled
-
-    if TemporaryRCSDisabled then
-        SavedProfileIndex = CurrentProfileIndex
-        OutputLogMessage(
-            "RCS temporarily disabled. Saved profile: %s\n",
-            tostring(RecoilControlMode)
-        )
-        return
-    end
-
-    if SavedProfileIndex ~= nil then
-        CurrentProfileIndex = SavedProfileIndex
-        SetActiveProfile(ProfileOrder[CurrentProfileIndex])
-    end
-
-    OutputLogMessage("RCS re-enabled. Restored saved profile.\n")
-    PrintActiveProfile()
+            and PreviousProfileGKey > 0
+            and arg == PreviousProfileGKey)
 end
 
 ------------ LOGITECH G HUB EVENTS -------------
@@ -233,8 +216,8 @@ end
 PrintActiveProfile()
 
 function OnEvent(event, arg)
-    if IsTemporaryTogglePressed(event, arg) then
-        ToggleTemporaryRCS()
+    if IsPreviousProfilePressed(event, arg) then
+        PreviousProfile()
         return
     end
 
@@ -244,10 +227,6 @@ function OnEvent(event, arg)
     end
 
     if not EnableRCS then
-        return
-    end
-
-    if TemporaryRCSDisabled then
         return
     end
 
