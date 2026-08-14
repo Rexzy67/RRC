@@ -1,5 +1,36 @@
 # RRC update notes
 
+## Current update: configurable popup inputs
+
+The standalone profile popup can now follow either keyboard keys assigned in Logitech G HUB or physical Windows mouse buttons.
+
+### Added
+
+- Added `INPUT_MODE` to `scripts/ProfilePopup.pyw` with two modes:
+  - `"keyboard"` monitors assigned keys globally.
+  - `"mouse"` monitors physical Mouse 1 through Mouse 5 buttons.
+- Added configurable keyboard fields:
+  - `PREVIOUS_PROFILE_KEY`
+  - `NEXT_PROFILE_KEY`
+- Keyboard mode supports letters, numbers, common punctuation, `Space`, `Tab`, `Enter`, `Backspace`, `Esc`, and `F1` through `F24`.
+- Added input validation for unsupported keys, duplicate previous/next controls, invalid input modes, and invalid mouse-button numbers.
+- Added key-repeat protection so holding a configured key advances only once until it is released and pressed again.
+
+### Default configuration
+
+- `RRSCRIPT.lua` still uses **Mouse 5** for the next profile and **Mouse 4** for the previous profile.
+- The popup defaults to Mouse mode, matching the recommended Logitech G HUB assignments:
+- The popup remains independent from G HUB and does not require G HUB to access external files.
+
+### Alternative mouse mode
+
+For mice that expose profile controls directly to Windows, set `INPUT_MODE = "mouse"` and configure `PREVIOUS_PROFILE_MOUSE_BUTTON` and `NEXT_PROFILE_MOUSE_BUTTON`. Mouse mode supports buttons `1` through `5`; avoid Mouse 1 and Mouse 3 unless the Lua fire-and-aim bindings have also been changed.
+
+### Documentation and verification
+
+- Updated setup and troubleshooting guidance for keyboard and mouse input modes.
+- Validated the popup configuration, keyboard symbol mapping for `-` and `,`, repeated-key handling, Python syntax, and Markdown documentation.
+
 ## Overview
 
 This release expands the Logitech G HUB recoil-control script with weapon profile navigation, sensitivity scaling, additional presets, and an independent Windows profile popup. It also adds setup, calibration, troubleshooting, and contribution guidance for GitHub.

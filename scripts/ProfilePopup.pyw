@@ -60,9 +60,9 @@ INITIAL_PROFILE = "Custom"
 # ``"mouse"`` to monitor physical Windows mouse buttons 1 through 5.
 # The keyboard default matches a common G HUB mapping: Mouse 7 -> ``-`` and
 # Mouse 8 -> ``,``. Key matching is case-insensitive for letters.
-INPUT_MODE = "mouse"
-PREVIOUS_PROFILE_KEY = "4"
-NEXT_PROFILE_KEY = "5"
+INPUT_MODE = "keyboard"
+PREVIOUS_PROFILE_KEY = "-"
+NEXT_PROFILE_KEY = ","
 
 # Used only when INPUT_MODE is "mouse". Keep these aligned with the Lua
 # profile-button values. Do not use Mouse 1 or Mouse 3 unless the Lua trigger
