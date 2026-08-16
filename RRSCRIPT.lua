@@ -25,6 +25,14 @@ PreviousProfileButton = 7
 -- Set to 0 when unused. Normal letter keys are not exposed to G HUB Lua scripts.
 PreviousProfileGKey = 0
 
+-- Profile switching debounce time (milliseconds) to prevent rapid cycling
+-- Set to 0 to disable debouncing
+ProfileSwitchDebounce = 200
+
+-- Minimum delay rate (milliseconds) to prevent excessive CPU usage
+-- Set to 0 to disable minimum delay validation
+MinDelayRate = 10
+
 ----- DPI AND SENSITIVITY CALIBRATION -----
 -- Presets are calibrated at 900 DPI, Vertical 10, and Horizontal 20.
 -- Enter your own current mouse DPI and Rainbow Six Siege sensitivity below.
@@ -123,6 +131,8 @@ CalibrationIsValid = type(MouseDPI) == "number"
     and MouseDPI > 0
     and type(VerticalSensitivity) == "number"
     and VerticalSensitivity > 0
+    and type(HorizontalSensitivity) == "number"
+    and HorizontalSensitivity > 0
 
 function ScaleRecoilStrength(baselineStrength)
     if baselineStrength <= 0 then
@@ -138,6 +148,18 @@ function ScaleRecoilStrength(baselineStrength)
         * (BaselineVerticalSensitivity / VerticalSensitivity)
 
     return math.max(1, math.floor(scaledStrength + 0.5))
+end
+
+-- Apply minimum delay rate to prevent excessive CPU usage
+function GetEffectiveDelayRate()
+    if MinDelayRate > 0 and DelayRate < MinDelayRate then
+        OutputLogMessage(string.format(
+            "DelayRate (%d) is below minimum (%d). Using minimum value.\n",
+            DelayRate, MinDelayRate
+        ))
+        return MinDelayRate
+    end
+    return DelayRate
 end
 
 function GetProfileIndex(profileName)
@@ -165,6 +187,29 @@ function PrintActiveProfile()
     )
 end
 
+-- Validate configuration
+if ProfileSwitchButton == PreviousProfileButton then
+    OutputLogMessage("Error: ProfileSwitchButton and PreviousProfileButton cannot be the same. Disabling profile switching.\n")
+    ProfileSwitchButton = 0
+    PreviousProfileButton = 0
+end
+
+if ProfileSwitchButton == 1 or ProfileSwitchButton == 3 then
+    OutputLogMessage("Warning: ProfileSwitchButton is set to fire or aim button (1 or 3). This may interfere with gameplay.\n")
+end
+
+if PreviousProfileButton == 1 or PreviousProfileButton == 3 then
+    OutputLogMessage("Warning: PreviousProfileButton is set to fire or aim button (1 or 3). This may interfere with gameplay.\n")
+end
+
+if PreviousProfileGKey < 0 or PreviousProfileGKey > 18 then
+    OutputLogMessage("Warning: PreviousProfileGKey should be between 0 and 18. Setting to 0 (disabled).\n")
+    PreviousProfileGKey = 0
+end
+
+-- Debounce tracking for profile switching
+LastProfileSwitchTime = 0
+
 CurrentProfileIndex = GetProfileIndex(RecoilControlMode)
 
 if CurrentProfileIndex ~= nil then
@@ -175,6 +220,13 @@ else
 end
 
 function CycleProfile()
+    -- Debounce profile switching
+    local currentTime = GetRunningTime()
+    if ProfileSwitchDebounce > 0 and (currentTime - LastProfileSwitchTime) < ProfileSwitchDebounce then
+        return
+    end
+    LastProfileSwitchTime = currentTime
+
     if CurrentProfileIndex == nil then
         CurrentProfileIndex = 1
     else
@@ -186,6 +238,13 @@ function CycleProfile()
 end
 
 function PreviousProfile()
+    -- Debounce profile switching
+    local currentTime = GetRunningTime()
+    if ProfileSwitchDebounce > 0 and (currentTime - LastProfileSwitchTime) < ProfileSwitchDebounce then
+        return
+    end
+    LastProfileSwitchTime = currentTime
+
     if CurrentProfileIndex == nil then
         CurrentProfileIndex = #ProfileOrder
     else
@@ -211,7 +270,7 @@ EnablePrimaryMouseButtonEvents(true)
 
 if not CalibrationIsValid then
     OutputLogMessage(
-        "Invalid MouseDPI or VerticalSensitivity and or HorizontalSensitivity. Using unscaled 900 DPI/V10/H20 preset values.\n"
+        "Invalid MouseDPI, VerticalSensitivity, or HorizontalSensitivity. Using unscaled 900 DPI/V10/H20 preset values.\n"
     )
 end
 
@@ -243,7 +302,7 @@ function OnEvent(event, arg)
 
         repeat
             MoveMouseRelative(0, RecoilControlStrength)
-            Sleep(DelayRate)
+            Sleep(GetEffectiveDelayRate())
         until not IsMouseButtonPressed(1)
            or not IsMouseButtonPressed(3)
     end

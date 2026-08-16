@@ -68,6 +68,8 @@ $numDelayRate = Add-Numeric "Delay Rate (ms)" 20 1000
 $numProfileSwitch = Add-Numeric "Profile Switch Button" 8 20
 $numPrevProfile = Add-Numeric "Previous Profile Button" 7 20
 $numPrevGKey = Add-Numeric "Previous Profile G-Key" 0 20
+$numProfileDebounce = Add-Numeric "Profile Switch Debounce (ms)" 200 1000
+$numMinDelay = Add-Numeric "Minimum Delay Rate (ms)" 10 100
 
 # Divider
 $script:yPos += 10
@@ -250,7 +252,9 @@ $btnSave.Add_Click({
                                      -replace "__V_SENS__", $numVertSens.Value `
                                      -replace "__H_SENS__", $numHorizSens.Value `
                                      -replace "__WEAPON__", $cmbWeapon.SelectedItem `
-                                     -replace "__CUSTOM_STR__", $numCustomStr.Value
+                                     -replace "__CUSTOM_STR__", $numCustomStr.Value `
+                                     -replace "__PROFILE_DEBOUNCE__", $numProfileDebounce.Value `
+                                     -replace "__MIN_DELAY_RATE__", $numMinDelay.Value
         
         # Write to file
         [System.IO.File]::WriteAllText($saveDialog.FileName, $outputScript)
