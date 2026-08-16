@@ -1,5 +1,11 @@
--- If opened in a code editor, this file may show API warnings because it uses Logitech G HUB's Lua API.
+-- If opened in a code editor, this file may show undefined global variable warnings because this script uses Logitech G HUB's Lua API.
 -- Edit and run the script in Logitech G HUB to verify it.
+
+--DO NOT CHANGE (BASELINE VALUES)---
+BaselineDPI = 900
+BaselineVerticalSensitivity = 10
+BaselineHorizontalSensitivity = 20
+------------------------------------
 
 ----- USER CONFIGURATION -----
 EnableRCS = true
@@ -30,10 +36,6 @@ HorizontalSensitivity = 20
 ----- WEAPON PRESETS -----
 RecoilControlMode = "Custom"
 RcCustomStrength = 32
-
-BaselineDPI = 900
-BaselineVerticalSensitivity = 10
-BaselineHorizontalSensitivity = 20
 
 ProfileOrder = {
     "P90",
