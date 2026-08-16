@@ -158,7 +158,7 @@ end
 
 function PrintActiveProfile()
     OutputLogMessage(
-        "Current weapon profile: %s (strength: %s; 900 DPI/V10 baseline: %s)\n",
+        "Current weapon profile: %s (strength: %s; 900 DPI/V10/H20 baseline: %s)\n",
         tostring(RecoilControlMode),
         tostring(RecoilControlStrength),
         tostring(BaselineRecoilControlStrength)
@@ -211,7 +211,7 @@ EnablePrimaryMouseButtonEvents(true)
 
 if not CalibrationIsValid then
     OutputLogMessage(
-        "Invalid MouseDPI or VerticalSensitivity. Using unscaled 900 DPI/V10 preset values.\n"
+        "Invalid MouseDPI or VerticalSensitivity and or HorizontalSensitivity. Using unscaled 900 DPI/V10/H20 preset values.\n"
     )
 end
 
