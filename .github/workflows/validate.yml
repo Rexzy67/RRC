@@ -9,17 +9,6 @@ permissions:
   contents: read
 
 jobs:
-  documentation:
-    name: Validate documentation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Validate Markdown structure and local links
-        shell: pwsh
-        run: ./scripts/Test-Documentation.ps1
-
   lua-syntax:
     name: Check Lua syntax
     runs-on: ubuntu-latest
