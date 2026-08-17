@@ -5,7 +5,7 @@ Add-Type -AssemblyName System.Drawing
 # --- GUI Setup ---
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Logitech G HUB RCS Configurator"
-$form.Size = New-Object System.Drawing.Size(380, 560)
+$form.Size = New-Object System.Drawing.Size(400, 620)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
@@ -79,6 +79,14 @@ $numDPI = Add-Numeric "Mouse DPI" 900 32000
 $numVertSens = Add-Numeric "Vertical Sensitivity" 10 100
 $numHorizSens = Add-Numeric "Horizontal Sensitivity" 20 100
 
+# --- NEW FEATURE: Enable Horizontal RCS ---
+$chkEnableHorizontalRCS = New-Object System.Windows.Forms.CheckBox
+$chkEnableHorizontalRCS.Text = "Enable Horizontal RCS"
+$chkEnableHorizontalRCS.Location = New-Object System.Drawing.Point(20, $script:yPos)
+$chkEnableHorizontalRCS.Checked = $false
+[void]$form.Controls.Add($chkEnableHorizontalRCS)
+$script:yPos += 30
+
 # Divider
 $script:yPos += 10
 
@@ -86,6 +94,7 @@ $script:yPos += 10
 $profiles = @("P90","SMG11","SMG12","R4C","AK74M","F2","M762","XK23","Scorpion","K1A","MPX","Vector","T-5","9x19","TCSG12","MP7","UZK50GI","MP5","MP5SD","MP5K","416-C","UMP45","P10 Roni","SPEAR .308","PARA-308","556XI","L85A2","M4","AK-12","552 COMMANDO","C8-SFW","V308","T-95 LSW","C7E","F90","G36C","POF-9","Custom")
 $cmbWeapon = Add-Combo "Default Weapon" $profiles "Custom"
 $numCustomStr = Add-Numeric "Custom Strength" 32 500
+$numCustomHorizStr = Add-Numeric "Custom Horizontal Strength" 0 500  # New: Horizontal strength for custom profile
 
 $script:yPos += 20
 
@@ -102,8 +111,15 @@ $luaTemplate = @"
 -- If opened in a code editor, this file may show API warnings because it uses Logitech G HUB's Lua API.
 -- Edit and run the script in Logitech G HUB to verify it.
 
+--DO NOT CHANGE (BASELINE VALUES)---
+BaselineDPI = 900
+BaselineVerticalSensitivity = 10
+BaselineHorizontalSensitivity = 20
+------------------------------------
+
 ----- USER CONFIGURATION -----
 EnableRCS = __ENABLE_RCS__
+EnableHorizontalRCS = __ENABLE_HORIZONTAL_RCS__  -- New: Enable horizontal recoil compensation
 RequireToggle = __REQUIRE_TOGGLE__
 ToggleKey = "__TOGGLE_KEY__"
 DelayRate = __DELAY_RATE__
@@ -120,10 +136,18 @@ PreviousProfileButton = __PREV_BTN__
 -- Set to 0 when unused. Normal letter keys are not exposed to G HUB Lua scripts.
 PreviousProfileGKey = __PREV_GKEY__
 
+-- Profile switching debounce time (milliseconds) to prevent rapid cycling
+-- Set to 0 to disable debouncing
+ProfileSwitchDebounce = __PROFILE_DEBOUNCE__
+
+-- Minimum delay rate (milliseconds) to prevent excessive CPU usage
+-- Set to 0 to disable minimum delay validation
+MinDelayRate = __MIN_DELAY_RATE__
+
 ----- DPI AND SENSITIVITY CALIBRATION -----
 -- Presets are calibrated at 900 DPI, Vertical 10, and Horizontal 20.
 -- Enter your own current mouse DPI and Rainbow Six Siege sensitivity below.
--- HorizontalSensitivity is recorded for calibration compatibility; this script only moves vertically.
+-- HorizontalSensitivity is recorded for calibration compatibility; this script moves both vertically and horizontally when enabled.
 MouseDPI = __DPI__
 VerticalSensitivity = __V_SENS__
 HorizontalSensitivity = __H_SENS__
@@ -131,10 +155,7 @@ HorizontalSensitivity = __H_SENS__
 ----- WEAPON PRESETS -----
 RecoilControlMode = "__WEAPON__"
 RcCustomStrength = __CUSTOM_STR__
-
-BaselineDPI = 900
-BaselineVerticalSensitivity = 10
-BaselineHorizontalSensitivity = 20
+HorizontalRcCustomStrength = __CUSTOM_HORIZ_STR__  -- New: Horizontal strength for custom profile
 
 ProfileOrder = {
     "P90", "SMG11", "SMG12", "R4C", "AK74M", "F2", "M762", "XK23", "Scorpion", "K1A", "MPX", "Vector", "T-5", "9x19", "TCSG12", "MP7", "UZK50GI", "MP5", "MP5SD", "MP5K", "416-C", "UMP45", "P10 Roni", "SPEAR .308", "PARA-308", "556XI", "L85A2", "M4", "AK-12", "552 COMMANDO", "C8-SFW", "V308", "T-95 LSW", "C7E", "F90", "G36C", "POF-9", "Custom"
@@ -144,12 +165,24 @@ ProfileStrengths = {
     P90 = 15, SMG11 = 25, SMG12 = 31, R4C = 18, AK74M = 23, F2 = 52, M762 = 37, XK23 = 26, Scorpion = 18, K1A = 15, MPX = 13, Vector = 13, ["T-5"] = 15, ["9x19"] = 14, TCSG12 = 60, MP7 = 17, UZK50GI = 17, MP5 = 14, MP5SD = 16, MP5K = 16, ["416-C"] = 13, UMP45 = 8, ["P10 Roni"] = 14, ["SPEAR .308"] = 33, ["PARA-308"] = 28, ["556XI"] = 24, L85A2 = 26, M4 = 35, ["AK-12"] = 37, ["552 COMMANDO"] = 37, ["C8-SFW"] = 41, V308 = 29, ["T-95 LSW"] = 32, C7E = 42, F90 = 31, G36C = 36, ["POF-9"] = 33, Custom = RcCustomStrength
 }
 
-CalibrationIsValid = type(MouseDPI) == "number" and MouseDPI > 0 and type(VerticalSensitivity) == "number" and VerticalSensitivity > 0
+-- New: Horizontal strengths for each weapon (default 0, meaning no horizontal compensation)
+ProfileHorizontalStrengths = {
+    P90 = 0, SMG11 = 0, SMG12 = 0, R4C = 0, AK74M = 0, F2 = 0, M762 = 0, XK23 = 0, Scorpion = 0, K1A = 0, MPX = 0, Vector = 0, ["T-5"] = 0, ["9x19"] = 0, TCSG12 = 0, MP7 = 0, UZK50GI = 0, MP5 = 0, MP5SD = 0, MP5K = 0, ["416-C"] = 0, UMP45 = 0, ["P10 Roni"] = 0, ["SPEAR .308"] = 0, ["PARA-308"] = 0, ["556XI"] = 0, L85A2 = 0, M4 = 0, ["AK-12"] = 0, ["552 COMMANDO"] = 0, ["C8-SFW"] = 0, V308 = 0, ["T-95 LSW"] = 0, C7E = 0, F90 = 0, G36C = 0, ["POF-9"] = 0, Custom = HorizontalRcCustomStrength
+}
 
-function ScaleRecoilStrength(baselineStrength)
+CalibrationIsValid = type(MouseDPI) == "number" and MouseDPI > 0 and type(VerticalSensitivity) == "number" and VerticalSensitivity > 0 and type(HorizontalSensitivity) == "number" and HorizontalSensitivity > 0
+
+function ScaleRecoilStrength(baselineStrength, useVerticalSensitivity)
     if baselineStrength <= 0 then return 0 end
     if not CalibrationIsValid then return baselineStrength end
-    local scaledStrength = baselineStrength * (BaselineDPI / MouseDPI) * (BaselineVerticalSensitivity / VerticalSensitivity)
+    local dpiScale = BaselineDPI / MouseDPI
+    local sensitivityScale
+    if useVerticalSensitivity then
+        sensitivityScale = BaselineVerticalSensitivity / VerticalSensitivity
+    else
+        sensitivityScale = BaselineHorizontalSensitivity / HorizontalSensitivity
+    end
+    local scaledStrength = baselineStrength * dpiScale * sensitivityScale
     return math.max(1, math.floor(scaledStrength + 0.5))
 end
 
@@ -163,11 +196,13 @@ end
 function SetActiveProfile(profileName)
     RecoilControlMode = profileName
     BaselineRecoilControlStrength = ProfileStrengths[profileName] or 0
-    RecoilControlStrength = ScaleRecoilStrength(BaselineRecoilControlStrength)
+    BaselineHorizontalRecoilControlStrength = ProfileHorizontalStrengths[profileName] or 0
+    RecoilControlStrength = ScaleRecoilStrength(BaselineRecoilControlStrength, true)
+    HorizontalRecoilControlStrength = ScaleRecoilStrength(BaselineHorizontalRecoilControlStrength, false)
 end
 
 function PrintActiveProfile()
-    OutputLogMessage("Current weapon profile: %s (strength: %s; 900 DPI/V10 baseline: %s)\n", tostring(RecoilControlMode), tostring(RecoilControlStrength), tostring(BaselineRecoilControlStrength))
+    OutputLogMessage("Current weapon profile: %s (vertical strength: %s, horizontal strength: %s; 900 DPI/V10/H20 baseline: V%i, H%i)\n", tostring(RecoilControlMode), tostring(RecoilControlStrength), tostring(HorizontalRecoilControlStrength), tostring(BaselineRecoilControlStrength), tostring(BaselineHorizontalRecoilControlStrength))
 end
 
 CurrentProfileIndex = GetProfileIndex(RecoilControlMode)
@@ -176,19 +211,43 @@ if CurrentProfileIndex ~= nil then
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
 else
     BaselineRecoilControlStrength = 0
+    BaselineHorizontalRecoilControlStrength = 0
     RecoilControlStrength = 0
+    HorizontalRecoilControlStrength = 0
 end
 
 function CycleProfile()
-    if CurrentProfileIndex == nil then CurrentProfileIndex = 1
-    else CurrentProfileIndex = (CurrentProfileIndex % #ProfileOrder) + 1 end
+    -- Debounce profile switching
+    local currentTime = GetRunningTime()
+    if ProfileSwitchDebounce > 0 and (currentTime - LastProfileSwitchTime) < ProfileSwitchDebounce then
+        return
+    end
+    LastProfileSwitchTime = currentTime
+
+    if CurrentProfileIndex == nil then
+        CurrentProfileIndex = 1
+    else
+        CurrentProfileIndex = (CurrentProfileIndex % #ProfileOrder) + 1
+    end
+
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
     PrintActiveProfile()
 end
 
 function PreviousProfile()
-    if CurrentProfileIndex == nil then CurrentProfileIndex = #ProfileOrder
-    else CurrentProfileIndex = ((CurrentProfileIndex - 2) % #ProfileOrder) + 1 end
+    -- Debounce profile switching
+    local currentTime = GetRunningTime()
+    if ProfileSwitchDebounce > 0 and (currentTime - LastProfileSwitchTime) < ProfileSwitchDebounce then
+        return
+    end
+    LastProfileSwitchTime = currentTime
+
+    if CurrentProfileIndex == nil then
+        CurrentProfileIndex = #ProfileOrder
+    else
+        CurrentProfileIndex = ((CurrentProfileIndex - 2) % #ProfileOrder) + 1
+    end
+
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
     PrintActiveProfile()
 end
@@ -201,7 +260,7 @@ end
 EnablePrimaryMouseButtonEvents(true)
 
 if not CalibrationIsValid then
-    OutputLogMessage("Invalid MouseDPI or VerticalSensitivity. Using unscaled 900 DPI/V10 preset values.\n")
+    OutputLogMessage("Invalid MouseDPI, VerticalSensitivity, or HorizontalSensitivity. Using unscaled 900 DPI/V10/H20 preset values.\n")
 end
 
 PrintActiveProfile()
@@ -222,8 +281,12 @@ function OnEvent(event, arg)
 
     if event == "MOUSE_BUTTON_PRESSED" and (arg == 1 or arg == 3) and IsMouseButtonPressed(1) and IsMouseButtonPressed(3) then
         repeat
-            MoveMouseRelative(0, RecoilControlStrength)
-            Sleep(DelayRate)
+            if EnableHorizontalRCS then
+                MoveMouseRelative(HorizontalRecoilControlStrength, RecoilControlStrength)
+            else
+                MoveMouseRelative(0, RecoilControlStrength)
+            end
+            Sleep(GetEffectiveDelayRate())
         until not IsMouseButtonPressed(1) or not IsMouseButtonPressed(3)
     end
 end
@@ -238,27 +301,30 @@ $btnSave.Add_Click({
     if ($saveDialog.ShowDialog() -eq "OK") {
         # Process Variables
         $strEnable = if ($chkEnableRCS.Checked) { "true" } else { "false" }
+        $strEnableHoriz = if ($chkEnableHorizontalRCS.Checked) { "true" } else { "false" }  # New: Horizontal RCS enable
         $strToggle = if ($chkRequireToggle.Checked) { "true" } else { "false" }
-        
+
         # Replace placeholders
         $outputScript = $luaTemplate -replace "__ENABLE_RCS__", $strEnable `
+                                     -replace "__ENABLE_HORIZONTAL_RCS__", $strEnableHoriz `
                                      -replace "__REQUIRE_TOGGLE__", $strToggle `
                                      -replace "__TOGGLE_KEY__", $cmbToggleKey.SelectedItem `
                                      -replace "__DELAY_RATE__", $numDelayRate.Value `
                                      -replace "__SWITCH_BTN__", $numProfileSwitch.Value `
                                      -replace "__PREV_BTN__", $numPrevProfile.Value `
                                      -replace "__PREV_GKEY__", $numPrevGKey.Value `
+                                     -replace "__PROFILE_DEBOUNCE__", $numProfileDebounce.Value `
+                                     -replace "__MIN_DELAY_RATE__", $numMinDelay.Value `
                                      -replace "__DPI__", $numDPI.Value `
                                      -replace "__V_SENS__", $numVertSens.Value `
                                      -replace "__H_SENS__", $numHorizSens.Value `
                                      -replace "__WEAPON__", $cmbWeapon.SelectedItem `
                                      -replace "__CUSTOM_STR__", $numCustomStr.Value `
-                                     -replace "__PROFILE_DEBOUNCE__", $numProfileDebounce.Value `
-                                     -replace "__MIN_DELAY_RATE__", $numMinDelay.Value
-        
+                                     -replace "__CUSTOM_HORIZ_STR__", $numCustomHorizStr.Value `
+
         # Write to file
         [System.IO.File]::WriteAllText($saveDialog.FileName, $outputScript)
-        
+
         [System.Windows.Forms.MessageBox]::Show("Script saved successfully to:`n" + $saveDialog.FileName, "Success", "OK", "Information")
     }
 })

@@ -9,6 +9,7 @@ BaselineHorizontalSensitivity = 20
 
 ----- USER CONFIGURATION -----
 EnableRCS = true
+EnableHorizontalRCS = true  -- New: Enable horizontal recoil compensation
 RequireToggle = false
 ToggleKey = "CapsLock"
 DelayRate = 20
@@ -27,7 +28,7 @@ PreviousProfileGKey = 0
 
 -- Profile switching debounce time (milliseconds) to prevent rapid cycling
 -- Set to 0 to disable debouncing
-ProfileSwitchDebounce = 200
+ProfileSwitchDebounce = 50
 
 -- Minimum delay rate (milliseconds) to prevent excessive CPU usage
 -- Set to 0 to disable minimum delay validation
@@ -36,7 +37,7 @@ MinDelayRate = 10
 ----- DPI AND SENSITIVITY CALIBRATION -----
 -- Presets are calibrated at 900 DPI, Vertical 10, and Horizontal 20.
 -- Enter your own current mouse DPI and Rainbow Six Siege sensitivity below.
--- HorizontalSensitivity is recorded for calibration compatibility; this script only moves vertically.
+-- HorizontalSensitivity is recorded for calibration compatibility; this script moves both vertically and horizontally when enabled.
 MouseDPI = 900
 VerticalSensitivity = 10
 HorizontalSensitivity = 20
@@ -44,61 +45,63 @@ HorizontalSensitivity = 20
 ----- WEAPON PRESETS -----
 RecoilControlMode = "Custom"
 RcCustomStrength = 32
+HorizontalRcCustomStrength = 0  -- New: Horizontal strength for custom profile
 
 ProfileOrder = {
+    "416-C",
+    "9x19",
+    "F90",
+    "K1A",
+    "M762",
+    "MP5",
+    "MPX",
+    "MP5K",
+    "MP5SD",
+    "MP7",
+    "P10 Roni",
     "P90",
+    "POF-9",
+    "R4C",
+    "Scorpion",
     "SMG11",
     "SMG12",
-    "R4C",
-    "AK74M",
-    "F2",
-    "M762",
-    "XK23",
-    "Scorpion",
-    "K1A",
-    "MPX",
-    "Vector",
     "T-5",
-    "9x19",
+    "T-95 LSW",
     "TCSG12",
-    "MP7",
-    "UZK50GI",
-    "MP5",
-    "MP5SD",
-    "MP5K",
-    "416-C",
     "UMP45",
-    "P10 Roni",
-    "SPEAR .308",
-    "PARA-308",
-    "556XI",
+    "UZK50GI",
+    "Vector",
+    "XK23",
+    "AK-12",
+    "AK74M",
+    "C7E",
+    "C8-SFW",
+    "F2",
+    "G36C",
     "L85A2",
     "M4",
-    "AK-12",
-    "552 COMMANDO",
-    "C8-SFW",
+    "PARA-308",
+    "SPEAR .308",
+    "SPEAR .308 HOLO",
     "V308",
-    "T-95 LSW",
-    "C7E",
-    "F90",
-    "G36C",
-    "POF-9",
+    "552 COMMANDO",
+    "556XI",
     "Custom"
 }
 
 ProfileStrengths = {
     P90 = 15,
-    SMG11 = 25,
+    SMG11 = 26,
     SMG12 = 31,
-    R4C = 18,
+    R4C = 45,
     AK74M = 23,
     F2 = 52,
     M762 = 37,
     XK23 = 26,
-    Scorpion = 18,
+    Scorpion = 21,
     K1A = 15,
     MPX = 13,
-    Vector = 13,
+    Vector = 18,
     ["T-5"] = 15,
     ["9x19"] = 14,
     TCSG12 = 60,
@@ -111,20 +114,64 @@ ProfileStrengths = {
     UMP45 = 8,
     ["P10 Roni"] = 14,
     ["SPEAR .308"] = 33,
+    ["SPEAR .308 HOLO"] = 13,
     ["PARA-308"] = 28,
     ["556XI"] = 24,
     L85A2 = 26,
     M4 = 35,
     ["AK-12"] = 37,
-    ["552 COMMANDO"] = 37,
+    ["552 COMMANDO"] = 30,
     ["C8-SFW"] = 41,
     V308 = 29,
     ["T-95 LSW"] = 32,
     C7E = 42,
-    F90 = 31,
+    F90 = 33,
     G36C = 36,
     ["POF-9"] = 33,
     Custom = RcCustomStrength
+}
+
+-- New: Horizontal strengths for each weapon (default 0, meaning no horizontal compensation)
+ProfileHorizontalStrengths = {
+    P90 = 0,
+    SMG11 = 1,
+    SMG12 = 3,
+    R4C = -2,
+    AK74M = -1,
+    F2 = -1,
+    M762 = 1,
+    XK23 = 2,
+    Scorpion = 2,
+    K1A = -1,
+    MPX = 0,
+    Vector = -1,
+    ["T-5"] = 0,
+    ["9x19"] = -1,
+    TCSG12 = 0,
+    MP7 = 0,
+    UZK50GI = 0,
+    MP5 = -1,
+    MP5SD = -1,
+    MP5K = 0,
+    ["416-C"] = -1,
+    UMP45 = -1,
+    ["P10 Roni"] = 0,
+    ["SPEAR .308"] = 0,
+    ["SPEAR .308 HOLO"] = -1,
+    ["PARA-308"] = -1,
+    ["556XI"] = 2,
+    L85A2 = 2,
+    M4 = -2,
+    ["AK-12"] = -3,
+    ["552 COMMANDO"] = -1,
+    ["C8-SFW"] = -1,
+    V308 = 0,
+    ["T-95 LSW"] = 0,
+    C7E = -2,
+    F90 = -2,
+    G36C = 3,
+    ["POF-9"] = -1,
+    Custom = HorizontalRcCustomStrength
 }
 
 CalibrationIsValid = type(MouseDPI) == "number"
@@ -134,20 +181,21 @@ CalibrationIsValid = type(MouseDPI) == "number"
     and type(HorizontalSensitivity) == "number"
     and HorizontalSensitivity > 0
 
-function ScaleRecoilStrength(baselineStrength)
-    if baselineStrength <= 0 then
-        return 0
-    end
-
+function ScaleRecoilStrength(baselineStrength, useVerticalSensitivity)
     if not CalibrationIsValid then
         return baselineStrength
     end
 
-    local scaledStrength = baselineStrength
-        * (BaselineDPI / MouseDPI)
-        * (BaselineVerticalSensitivity / VerticalSensitivity)
+    local dpiScale = BaselineDPI / MouseDPI
+    local sensitivityScale
+    if useVerticalSensitivity then
+        sensitivityScale = BaselineVerticalSensitivity / VerticalSensitivity
+    else
+        sensitivityScale = BaselineHorizontalSensitivity / HorizontalSensitivity
+    end
 
-    return math.max(1, math.floor(scaledStrength + 0.5))
+    local scaledStrength = baselineStrength * dpiScale * sensitivityScale
+    return scaledStrength
 end
 
 -- Apply minimum delay rate to prevent excessive CPU usage
@@ -175,15 +223,19 @@ end
 function SetActiveProfile(profileName)
     RecoilControlMode = profileName
     BaselineRecoilControlStrength = ProfileStrengths[profileName] or 0
-    RecoilControlStrength = ScaleRecoilStrength(BaselineRecoilControlStrength)
+    BaselineHorizontalRecoilControlStrength = ProfileHorizontalStrengths[profileName] or 0
+    RecoilControlStrength = ScaleRecoilStrength(BaselineRecoilControlStrength, true)
+    HorizontalRecoilControlStrength = ScaleRecoilStrength(BaselineHorizontalRecoilControlStrength, false)
 end
 
 function PrintActiveProfile()
     OutputLogMessage(
-        "Current weapon profile: %s (strength: %s; 900 DPI/V10/H20 baseline: %s)\n",
+        "Current weapon profile: %s (vertical strength: %.2f, horizontal strength: %.2f; 900 DPI/V10/H20 baseline: V%i, H%i)\n",
         tostring(RecoilControlMode),
-        tostring(RecoilControlStrength),
-        tostring(BaselineRecoilControlStrength)
+        RecoilControlStrength,
+        HorizontalRecoilControlStrength,
+        BaselineRecoilControlStrength,
+        BaselineHorizontalRecoilControlStrength
     )
 end
 
@@ -216,7 +268,9 @@ if CurrentProfileIndex ~= nil then
     SetActiveProfile(ProfileOrder[CurrentProfileIndex])
 else
     BaselineRecoilControlStrength = 0
+    BaselineHorizontalRecoilControlStrength = 0
     RecoilControlStrength = 0
+    HorizontalRecoilControlStrength = 0
 end
 
 function CycleProfile()
@@ -295,15 +349,23 @@ function OnEvent(event, arg)
         return
     end
 
-    if event == "MOUSE_BUTTON_PRESSED"
-        and (arg == 1 or arg == 3)
-        and IsMouseButtonPressed(1)
-        and IsMouseButtonPressed(3) then
+    -- Recoil activation: works when either button is pressed while the other is held
+-- This allows both "aim then shoot" and "shoot then aim" trigger patterns
+if event == "MOUSE_BUTTON_PRESSED" then
+    local isLeftButton = (arg == 1)
+    local isRightButton = (arg == 3)
+    local otherButtonHeld = isLeftButton and IsMouseButtonPressed(3) or isRightButton and IsMouseButtonPressed(1)
+
+    if (isLeftButton or isRightButton) and otherButtonHeld then
 
         repeat
-            MoveMouseRelative(0, RecoilControlStrength)
+            if EnableHorizontalRCS then
+                MoveMouseRelative(HorizontalRecoilControlStrength, RecoilControlStrength)
+            else
+                MoveMouseRelative(0, RecoilControlStrength)
+            end
             Sleep(GetEffectiveDelayRate())
-        until not IsMouseButtonPressed(1)
-           or not IsMouseButtonPressed(3)
+        until not IsMouseButtonPressed(1) or not IsMouseButtonPressed(3)
     end
+end
 end

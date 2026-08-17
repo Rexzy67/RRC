@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This repository contains a Logitech G HUB Lua script for Rainbow Six Siege recoil control (RRSCRIPT.lua) and a PowerShell-based configuration generator (RRSCRIPT.ps1). The Lua script implements vertical recoil compensation using mouse movement, with configurable weapon profiles, toggle keys, and calibration for different DPI/sensitivity settings.
+This repository contains a Logitech G HUB Lua script for Rainbow Six Siege recoil control (RRSCRIPT.lua) and a PowerShell-based configuration generator (RRSCRIPT.ps1). The Lua script implements vertical and horizontal recoil compensation using mouse movement, with configurable weapon profiles, toggle keys, and calibration for different DPI/sensitivity settings.
 
 ## Development
 
@@ -20,6 +20,7 @@ To modify the recoil behavior:
 
 The `RRSCRIPT.ps1` script provides a Windows Forms GUI to adjust:
 - Enable/disable RCS (recoil control system)
+- Enable/disable horizontal recoil compensation
 - Toggle key requirements (CapsLock, ScrollLock, NumLock)
 - Delay rate between mouse movements (ms)
 - Mouse button assignments for profile switching (next/previous)
@@ -41,36 +42,29 @@ There are no automated tests. To test changes:
 
 ## Code Structure
 
-### RRSCRIPT.lua
-- **Configuration section** (lines 10-34): User-adjustable settings (EnableRCS, ToggleKey, DelayRate, ProfileSwitchButton, etc.)
-- **Calibration settings** (lines 28-34): Mouse DPI and sensitivity values used to scale recoil strength
-- **Weapon presets** (lines 36-120): Profile ordering and predefined recoil strengths for various weapons
+- **Configuration section**: User-adjustable settings (EnableRCS, EnableHorizontalRCS, ToggleKey, DelayRate, ProfileSwitchButton, etc.)
+- **Calibration settings**: Mouse DPI and sensitivity values used to scale recoil strength (both vertical and horizontal)
+- **Weapon presets**: Profile ordering and predefined recoil strengths (both vertical and horizontal) for various weapons
 - **Helper functions**:
-  - `ScaleRecoilStrength`: Adjusts base strength based on current DPI/sensitivity vs baseline (900 DPI, V10, H20)
+  - `ScaleRecoilStrength`: Adjusts base strength based on current DPI/sensitivity vs baseline (900 DPI, V10, H20) and returns a decimal value for fine-tuned control
   - `GetProfileIndex`: Returns index of a profile name in ProfileOrder
-  - `SetActiveProfile`: Sets current profile and calculates scaled strength
-  - `PrintActiveProfile`: Logs current profile and strength to G HUB console
+  - `SetActiveProfile`: Sets current profile and calculates scaled vertical and horizontal strength
+  - `PrintActiveProfile`: Logs current profile and strength to G HUB console (now shows two decimal places)
   - `CycleProfile`/`PreviousProfile`: Functions for switching weapon profiles
   - `IsPreviousProfilePressed`: Checks for mouse/G-key events to trigger previous profile
-- **Event handler** (lines 208-250): `OnEvent` function processes mouse button presses for:
+- **Event handler**: `OnEvent` function processes mouse button presses for:
   - Previous profile button
   - Profile switch button
-  - Recoil compensation (when both mouse buttons 1 and 3 are pressed and RCS is enabled)
-
-### RRSCRIPT.ps1
-- **GUI setup**: Creates a Windows Forms application with controls for all configurable parameters
-- **Helper functions**: `Add-Label`, `Add-Numeric`, `Add-Combo` simplify GUI creation
-- **Lua template** (lines 99-228): Contains the full Lua script with placeholders for configuration values
-- **Save logic** (lines 231-260): Replaces placeholders in the template with GUI values and writes to file
-- **Event handling**: Save button click triggers the file generation and shows success message
+  - Recoil compensation (when both mouse buttons 1 and 3 are pressed and RCS is enabled; supports both vertical and horizontal movement based on configuration)
 
 ## Notes
 
-- The script is calibrated for 900 DPI, Vertical Sensitivity 10, Horizontal Sensitivity 20 (baseline values in lines 5-7)
-- Adjust `MouseDPI` and `VerticalSensitivity` in the configuration to match your setup for proper scaling
-- The script only handles vertical recoil compensation (horizontal movement is not implemented)
+- The script is calibrated for 900 DPI, Vertical Sensitivity 10, Horizontal Sensitivity 20 (baseline values)
+- Adjust `MouseDPI`, `VerticalSensitivity`, and `HorizontalSensitivity` in the configuration to match your setup for proper scaling
+- The script handles both vertical and horizontal recoil compensation when `EnableHorizontalRCS` is set to true
 - Profile switching uses mouse buttons (default: button 8 for next, button 7 for previous) with optional G-key support
-- Recoil activation requires both left and right mouse buttons pressed (unless `RequireToggle` is enabled and toggle key is active)
+- Recoil activation works when both mouse buttons are pressed, regardless of order (shoot then aim or aim then shoot)
+- Decimal values are allowed for recoil strength to enable fine-tuned control
 
 ## Repository Structure
 

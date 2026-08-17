@@ -8,7 +8,7 @@ ___
 ![Lua](https://img.shields.io/badge/Language-Lua-2C2D72?style=flat-square&logo=lua&logoColor=white)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5391FE?style=flat&logo=powershell&logoColor=white)
 ![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)
-> Custom Logitech G Hub macro engineered for minimal recoil across most primaries and secondaries.
+> Custom Logitech G Hub macro engineered for minimal recoil across most primaries and secondaries. Now with **Horizontal Recoil Compensation** support!
 ---
 > [!IMPORTANT]
 > ### Terms of Use & Disclaimer of Responsibility
@@ -16,27 +16,22 @@ ___
 ___
 ## Requirements
 > Before installing, ensure you have the following setup:
-
 *  **Logitech G Mouse:** Any Logitech G-series mouse compatible with G HUB.
 *  **Logitech G HUB:** Installed and running (Windows / macOS). [Download](https://www.logitechg.com/en-us/software/ghub)
 *  **Programming Languages: [AutoHotkey V2](https://www.autohotkey.com/) and [Python 3.16+](python.org/downloads)**
 ---
 ## Installation Guide
-
 Follow these steps to load the Lua script into Logitech G HUB:
-
 **0.** **Install and Extract the Script**
    Install the Script from the Repository and extract it to your Desktop.
-
 **1.** **Run the Configuration Creator**
    Run `RRSCRIPT.ps1` and configure the script to your liking.
-
+   > [!NOTE]
+   > New feature: You can now enable **Horizontal Recoil Compensation** for weapons that have significant horizontal recoil patterns!
 **2.** **Open Logitech G HUB**
    Launch the **Logitech G HUB** software on your PC. *(Running G HUB as Administrator is recommended).*
-
 **3.** **Select Your Game Profile**
    Click on the active profile dropdown at the top center of the screen and choose Manage Profiles.
-
 **4.** **Select your Rainbow 6 Siege Profile**
    Click on Rainbow 6 Siege then you will be within the Rainbow 6 Profile. Select the Profiles three dots which is set to `Default`.
    > #### Rainbow 6 Siege not Visible?
@@ -44,15 +39,11 @@ Follow these steps to load the Lua script into Logitech G HUB:
    
 **5.** **Creating a New Script**
    Click **Create Lua Script** and delete the existing Code.
-
 **6.** **Setting up the Script**
    Delete any default text inside the editor window, then copy and paste the configured Lua script code into the editor, give it a Name in the Top middle where it says `New Script`.
-
 **7.** **Save and Activate**
    Click **Script > Save & Run** from the top menu (or press `Ctrl + S`). Check the output console at the bottom to verify the script saved without errors.
-
 #### If done correctly the Output Console should show `LOADED`.
-
 > [!TIP]
 > **Correct Usage:**
 > * For a Full Tutorial on how to use the Script correctly, edit values and Toubleshoot check out [How to use?](https://github.com/Rexzy67/RRC/blob/main/docs/HOWTOUSE.md)
@@ -68,6 +59,7 @@ ___
 > *  **Report Bugs:** Open an issue if you find a broken preset or script error.
 > *  **Add Presets:** Share optimized recoil values for new or updated guns.
 > *  **Improve Code:** Optimize performance or clean up existing Lua logic.
+> *  **Suggest Features:** Ideas for new features like horizontal recoil compensation, better profile management, etc.
 ___
 > [!TIP]
 > ### Thanks for using my Script!

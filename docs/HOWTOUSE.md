@@ -3,7 +3,7 @@
 This guide explains the settings in `RRSCRIPT.lua`, how to select a preset, and how to submit a calibration update.
 
 > [!IMPORTANT]
-> The current preset values require both a **Flash Hider** and a **Vertical Grip**. Set **Mouse ADS Sensitivity** to **40 on every scope**. Changing attachments, ADS sensitivity, in-game sensitivity, DPI, or resolution can change the result. Test any configuration in an environment where automation is permitted before relying on it.
+> The current preset values require both a **Flash Hider**, a **Vertical Grip**, and **ACOG scope** on all weapons that support it. Set **Mouse ADS Sensitivity** to **40 on every scope**. Changing attachments, ADS sensitivity, in-game sensitivity, DPI, or resolution can change the result. Test any configuration in an environment where automation is permitted before relying on it.
 
 > [!IMPORTANT]
 > ## Start the popup helper first
@@ -33,7 +33,7 @@ The values at the top of `RRSCRIPT.lua` are intended to be configured. Keep thei
 | `VerticalSensitivity` | Number | `10` | Your current Rainbow Six Siege vertical sensitivity. Enter a positive value. |
 | `HorizontalSensitivity` | Number | `20` | Your current Rainbow Six Siege horizontal sensitivity. It is recorded for calibration compatibility but does not alter vertical-only compensation. |
 | `RecoilControlMode` | String | `"Custom"` | The active preset name, or `"Custom"` to use `RcCustomStrength`. |
-| `RcCustomStrength` | Integer | `32` | Baseline strength used only when `RecoilControlMode` is `"Custom"`; it is scaled from 900 DPI and vertical sensitivity 10. |
+| `RcCustomStrength` | Number | `32` | Baseline strength used only when `RecoilControlMode` is `"Custom"`; it is scaled from 900 DPI and vertical sensitivity 10. Decimal values are allowed for more fine-tuned control. |
 
 Save the script in G HUB every time you change a value.
 
@@ -67,43 +67,42 @@ Available built-in presets are:
 
 | Weapon profile | Operator | 900 DPI / Vertical 10 strength |
 | :--- | :--- | ---: |
+| `416-C` | Jäger | 13 |
+| `9x19` | Kapkan | 14 |
+| `F90` | Gridlock | 31 |
+| `K1A` | — | 15 |
+| `M762` | — | 37 |
+| `MP5` | Melusi | 14 |
+| `MP5K` | Mute | 16 |
+| `MP5SD` | Echo | 16 |
+| `MP7` | Bandit | 17 |
+| `P10 Roni` | Mozzie | 14 |
 | `P90` | — | 15 |
+| `POF-9` | Sens | 33 |
+| `R4C` | — | 18 |
+| `Scorpion` | — | 18 |
 | `SMG11` | — | 25 |
 | `SMG12` | — | 31 |
-| `R4C` | — | 18 |
-| `AK74M` | — | 23 |
-| `F2` | — | 52 |
-| `M762` | — | 37 |
-| `XK23` | — | 26 |
-| `Scorpion` | — | 18 |
-| `K1A` | — | 15 |
-| `MPX` | — | 13 |
-| `Vector` | — | 13 |
 | `T-5` | Lesion | 15 |
-| `9x19` | Kapkan | 14 |
+| `T-95 LSW` | Ying | 32 |
 | `TCSG12` | Kaid | 60 |
-| `MP7` | Bandit | 17 |
-| `UZK50GI` | Thorn | 17 |
-| `MP5` | Melusi | 14 |
-| `MP5SD` | Echo | 16 |
-| `MP5K` | Mute | 16 |
-| `416-C` | Jäger | 13 |
 | `UMP45` | Castle | 8 |
-| `P10 Roni` | Mozzie | 14 |
-| `SPEAR .308` | Finka | 33 |
-| `PARA-308` | Brava | 28 |
-| `556XI` | Thermite | 24 |
+| `UZK50GI` | Thorn | 17 |
+| `Vector` | — | 13 |
+| `XK23` | — | 26 |
+| `AK-12` | Ace | 37 |
+| `AK74M` | — | 23 |
+| `C7E` | Jackal | 42 |
+| `C8-SFW` | Buck | 41 |
+| `F2` | — | 52 |
+| `G36C` | Iana | 36 |
 | `L85A2` | Thatcher | 26 |
 | `M4` | Maverick | 35 |
-| `AK-12` | Ace | 37 |
-| `552 COMMANDO` | Grim | 37 |
-| `C8-SFW` | Buck | 41 |
+| `PARA-308` | Brava | 28 |
+| `SPEAR .308` | Finka | 33 |
 | `V308` | Lion | 29 |
-| `T-95 LSW` | Ying | 32 |
-| `C7E` | Jackal | 42 |
-| `F90` | Gridlock | 31 |
-| `G36C` | Iana | 36 |
-| `POF-9` | Sens | 33 |
+| `552 COMMANDO` | Grim | 37 |
+| `556XI` | Thermite | 24 |
 
 Use `Custom` for a value you set yourself:
 
@@ -120,7 +119,7 @@ Press the mouse button set by `ProfileSwitchButton` to move to the next profile.
 
 Every press cycles through the profiles in this order:
 
-`P90` → `SMG11` → `SMG12` → `R4C` → `AK74M` → `F2` → `M762` → `XK23` → `Scorpion` → `K1A` → `MPX` → `Vector` → `T-5` → `9x19` → `TCSG12` → `MP7` → `UZK50GI` → `MP5` → `MP5SD` → `MP5K` → `416-C` → `UMP45` → `P10 Roni` → `SPEAR .308` → `PARA-308` → `556XI` → `L85A2` → `M4` → `AK-12` → `552 COMMANDO` → `C8-SFW` → `V308` → `T-95 LSW` → `C7E` → `F90` → `G36C` → `POF-9` → `Custom` → `P90`
+`416-C` → `9x19` → `F90` → `K1A` → `M762` → `MP5` → `MP5K` → `MP5SD` → `MP7` → `P10 Roni` → `P90` → `POF-9` → `R4C` → `Scorpion` → `SMG11` → `SMG12` → `T-5` → `T-95 LSW` → `TCSG12` → `UMP45` → `UZK50GI` → `Vector` → `XK23` → `AK-12` → `AK74M` → `C7E` → `C8-SFW` → `F2` → `G36C` → `L85A2` → `M4` → `PARA-308` → `SPEAR .308` → `V308` → `552 COMMANDO` → `556XI` → `Custom` → `416-C`
 
 G HUB writes the active profile and its strength to the script output console at startup and after every switch. For example:
 
