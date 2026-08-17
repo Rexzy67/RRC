@@ -4,11 +4,8 @@ Describe what changed and why.
 
 ## Verification
 
-Describe how you verified the change. For documentation-only changes, run:
+Describe how you verified the change.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Documentation.ps1
-```
 
 ## Checklist
 

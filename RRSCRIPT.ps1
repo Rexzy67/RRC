@@ -158,7 +158,7 @@ RcCustomStrength = __CUSTOM_STR__
 HorizontalRcCustomStrength = __CUSTOM_HORIZ_STR__  -- New: Horizontal strength for custom profile
 
 ProfileOrder = {
-    "P90", "SMG11", "SMG12", "R4C", "AK74M", "F2", "M762", "XK23", "Scorpion", "K1A", "MPX", "Vector", "T-5", "9x19", "TCSG12", "MP7", "UZK50GI", "MP5", "MP5SD", "MP5K", "416-C", "UMP45", "P10 Roni", "SPEAR .308", "PARA-308", "556XI", "L85A2", "M4", "AK-12", "552 COMMANDO", "C8-SFW", "V308", "T-95 LSW", "C7E", "F90", "G36C", "POF-9", "Custom"
+"SMG11", "SMG12", "C8-SFW", "F2", "R4C", "P90", "MP5", "MPX", "MP5K", "MP5SD", "MP7", "P10 Roni", "Vector", "XK23", "AK-12", "AK74M", "C7E", "416-C", "9x19", "F90", "K1A", "M762", "POF-9", "Scorpion", "T-5", "T-95 LSW", "TCSG12", "UMP45", "UZK50GI", "G36C", "L85A2", "M4", "PARA-308", "SPEAR .308", "SPEAR .308 HOLO", "V308", "552 COMMANDO", "556XI", "Custom"
 }
 
 ProfileStrengths = {
