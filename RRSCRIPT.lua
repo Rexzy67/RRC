@@ -13,6 +13,7 @@ EnableHorizontalRCS = true  -- New: Enable horizontal recoil compensation
 RequireToggle = false
 ToggleKey = "CapsLock"
 DelayRate = 20
+HumanizerStrength = 1.0  -- Strength of humanizer effect (0.0 = disabled, higher = stronger)
 
 -- Press this mouse-button number to cycle to the next weapon profile.
 -- Mouse button 8 is commonly an extra side button. Do not use buttons 1 or 3 here.
@@ -210,6 +211,15 @@ function GetEffectiveDelayRate()
     return DelayRate
 end
 
+-- Generate a random delay for humanizer effect (1-5ms * strength)
+function GetHumanizerDelay()
+    if HumanizerStrength <= 0 then
+        return 0
+    end
+    -- Random value between 1-5 multiplied by strength
+    return math.random(1, 5) * HumanizerStrength
+end
+
 function GetProfileIndex(profileName)
     for index, name in ipairs(ProfileOrder) do
         if name == profileName then
@@ -357,6 +367,8 @@ if event == "MOUSE_BUTTON_PRESSED" then
     local otherButtonHeld = isLeftButton and IsMouseButtonPressed(3) or isRightButton and IsMouseButtonPressed(1)
 
     if (isLeftButton or isRightButton) and otherButtonHeld then
+        -- Minimum start delay (110-120ms) to prevent instant triggering
+        Sleep(110 + math.random(0, 10))
 
         repeat
             if EnableHorizontalRCS then
@@ -364,7 +376,8 @@ if event == "MOUSE_BUTTON_PRESSED" then
             else
                 MoveMouseRelative(0, RecoilControlStrength)
             end
-            Sleep(GetEffectiveDelayRate())
+            -- Base delay + humanizer effect
+            Sleep(GetEffectiveDelayRate() + GetHumanizerDelay())
         until not IsMouseButtonPressed(1) or not IsMouseButtonPressed(3)
     end
 end

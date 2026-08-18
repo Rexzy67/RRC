@@ -79,6 +79,12 @@ $numDPI = Add-Numeric "Mouse DPI" 900 32000
 $numVertSens = Add-Numeric "Vertical Sensitivity" 10 100
 $numHorizSens = Add-Numeric "Horizontal Sensitivity" 20 100
 
+# Divider
+$script:yPos += 10
+
+# --- Humanizer Settings ---
+$numHumanizer = Add-Numeric "Humanizer Strength" 1.0 5.0
+
 # --- NEW FEATURE: Enable Horizontal RCS ---
 $chkEnableHorizontalRCS = New-Object System.Windows.Forms.CheckBox
 $chkEnableHorizontalRCS.Text = "Enable Horizontal RCS"
@@ -123,6 +129,7 @@ EnableHorizontalRCS = __ENABLE_HORIZONTAL_RCS__  -- New: Enable horizontal recoi
 RequireToggle = __REQUIRE_TOGGLE__
 ToggleKey = "__TOGGLE_KEY__"
 DelayRate = __DELAY_RATE__
+HumanizerStrength = __HUMANIZER_STRENGTH__  -- Strength of humanizer effect (0.0 = disabled, higher = stronger)
 
 -- Press this mouse-button number to cycle to the next weapon profile.
 -- Mouse button 8 is commonly an extra side button. Do not use buttons 1 or 3 here.
@@ -205,6 +212,26 @@ function PrintActiveProfile()
     OutputLogMessage("Current weapon profile: %s (vertical strength: %s, horizontal strength: %s; 900 DPI/V10/H20 baseline: V%i, H%i)\n", tostring(RecoilControlMode), tostring(RecoilControlStrength), tostring(HorizontalRecoilControlStrength), tostring(BaselineRecoilControlStrength), tostring(BaselineHorizontalRecoilControlStrength))
 end
 
+function GetEffectiveDelayRate()
+    if MinDelayRate > 0 and DelayRate < MinDelayRate then
+        OutputLogMessage(string.format(
+            "DelayRate (%d) is below minimum (%d). Using minimum value.\n",
+            DelayRate, MinDelayRate
+        ))
+        return MinDelayRate
+    end
+    return DelayRate
+end
+
+-- Generate a random delay for humanizer effect (1-5ms * strength)
+function GetHumanizerDelay()
+    if HumanizerStrength <= 0 then
+        return 0
+    end
+    -- Random value between 1-5 multiplied by strength
+    return math.random(1, 5) * HumanizerStrength
+end
+
 CurrentProfileIndex = GetProfileIndex(RecoilControlMode)
 
 if CurrentProfileIndex ~= nil then
@@ -280,15 +307,19 @@ function OnEvent(event, arg)
     if RequireToggle and not IsKeyLockOn(ToggleKey) then return end
 
     if event == "MOUSE_BUTTON_PRESSED" and (arg == 1 or arg == 3) and IsMouseButtonPressed(1) and IsMouseButtonPressed(3) then
-        repeat
-            if EnableHorizontalRCS then
-                MoveMouseRelative(HorizontalRecoilControlStrength, RecoilControlStrength)
-            else
-                MoveMouseRelative(0, RecoilControlStrength)
-            end
-            Sleep(GetEffectiveDelayRate())
-        until not IsMouseButtonPressed(1) or not IsMouseButtonPressed(3)
-    end
+            -- Minimum start delay (110-120ms) to prevent instant triggering
+            Sleep(110 + math.random(0, 10))
+
+            repeat
+                if EnableHorizontalRCS then
+                    MoveMouseRelative(HorizontalRecoilControlStrength, RecoilControlStrength)
+                else
+                    MoveMouseRelative(0, RecoilControlStrength)
+                end
+                -- Base delay + humanizer effect
+                Sleep(GetEffectiveDelayRate() + GetHumanizerDelay())
+            until not IsMouseButtonPressed(1) or not IsMouseButtonPressed(3)
+        end
 end
 "@
 
@@ -303,6 +334,7 @@ $btnSave.Add_Click({
         $strEnable = if ($chkEnableRCS.Checked) { "true" } else { "false" }
         $strEnableHoriz = if ($chkEnableHorizontalRCS.Checked) { "true" } else { "false" }  # New: Horizontal RCS enable
         $strToggle = if ($chkRequireToggle.Checked) { "true" } else { "false" }
+        $strHumanizer = $numHumanizer.Value.ToString()
 
         # Replace placeholders
         $outputScript = $luaTemplate -replace "__ENABLE_RCS__", $strEnable `
@@ -310,6 +342,7 @@ $btnSave.Add_Click({
                                      -replace "__REQUIRE_TOGGLE__", $strToggle `
                                      -replace "__TOGGLE_KEY__", $cmbToggleKey.SelectedItem `
                                      -replace "__DELAY_RATE__", $numDelayRate.Value `
+                                     -replace "__HUMANIZER_STRENGTH__", $strHumanizer `
                                      -replace "__SWITCH_BTN__", $numProfileSwitch.Value `
                                      -replace "__PREV_BTN__", $numPrevProfile.Value `
                                      -replace "__PREV_GKEY__", $numPrevGKey.Value `
