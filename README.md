@@ -1,7 +1,7 @@
 ###### *Credits to the original creator [@0CT1](https://github.com/0CT1)*
 > [!CAUTION]
 > ## Y11 S3 implements Script Detection
-> This script does not provide any anti-Anti Cheat and will most likely be detected at the Start of Year 11 Season 3 due to Ubisoft implementing a new Script Detection System called "MOUSETRAP". Using this script after Year 11 Season 3 **WILL MOST LIKELY RESULT IN A PERMANENT BAN!**.
+> This script does not provide any anti-Anti Cheat (exept for the Humanizer) and will maybe be detected at the Start of Year 11 Season 3 due to Ubisoft implementing a new Script Detection System called "MOUSETRAP". Using this script after Year 11 Season 3 **WILL MAYBE RESULT IN A PERMANENT BAN!**.
 ___
 # Rexzy — R6 Siege Recoil Control Script
 ![AutoHotkey v2](https://img.shields.io/badge/AutoHotkey-v2-334455?style=flat&logo=autohotkey&logoColor=white)
